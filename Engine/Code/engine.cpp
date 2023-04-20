@@ -215,17 +215,32 @@ void Init(App* app)
 
     app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    textureMeshProgram.;
-    // = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
-    //app->
+    //textureMeshProgram.vertexInputLayout.attributes.push_back({0, 3});
+    //textureMeshProgram.vertexInputLayout.attributes.push_back({2, 3});
+    glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
+    
+    GLsizei length;
+    GLint size;
+    GLenum type;
+    GLchar name[128];
 
-    app->modelPatrick = LoadModel(app,"Patrick.obj");
+    for (u32 i = 0; i < textureMeshProgram.lenght; ++i)
+    {
+        glGetActiveAttrib(textureMeshProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(textureMeshProgram.handle, name);
 
-    //app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    //app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    //app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    //app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    //app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+        u8 test = sizeof(type);
+
+        textureMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
+    
+    //app->modelPatrick = LoadModel(app,"Patrick.obj");
+
+    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
+    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
 
     app->glInfo.glVersion = reinterpret_cast<const char*> (glGetString(GL_VERSION));
