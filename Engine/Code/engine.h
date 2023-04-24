@@ -106,6 +106,7 @@ struct App
     u32 magentaTexIdx;
 
     u32 modelPatrick;
+    u8 texturedMeshProgram_uTexture;
 
     // Mode
     Mode mode;
