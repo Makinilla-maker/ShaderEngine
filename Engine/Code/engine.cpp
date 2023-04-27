@@ -288,7 +288,7 @@ void Gui(App* app)
 
 void Update(App* app)
 {
-
+    app->camera.Update(app);
 }
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
@@ -357,7 +357,7 @@ void Render(App* app)
         Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(textureMeshProgram.handle);
 
-        Model& model = app->models[app->modelPatrick];//aqui va el cargado?
+        Model& model = app->models[app->modelPatrick];
         Mesh& mesh = app->meshes[model.meshIdx];
 
         for (u32 i = 0; i<mesh.submeshes.size();++i)
@@ -371,7 +371,7 @@ void Render(App* app)
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
             
-            glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);//wtf is that variable
+            glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
 
             Submesh& submesh = mesh.submeshes[i];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT,(void*)(u64)submesh.indexOffset);

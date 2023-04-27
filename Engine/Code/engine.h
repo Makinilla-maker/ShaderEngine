@@ -7,6 +7,7 @@
 #include "platform.h"
 #include <glad/glad.h>
 #include "ModelLoader.h"
+#include "Camera.h"
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -123,6 +124,8 @@ struct App
     GLuint vao;
 
     OpenGlInfo glInfo;
+
+    Camera camera;
 
  };
 
