@@ -12,7 +12,7 @@ Camera::Camera()
 	projection = glm::perspective(glm::radians(60.0f),aspectRatio,zNear,zFar);
 	
 	//Camera Position
-	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+	cameraPos = glm::vec3(0.0f, 0.0f, -3.0f);
 	//Camera Direction
 	cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 	cameraDirection = glm::normalize(cameraPos - cameraTarget);
@@ -30,15 +30,14 @@ void Camera::Update(App* app)
 {
 	aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
 	
-	//view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	
-	float timer = 0;
+	projection = glm::perspective(glm::radians(60.0f), aspectRatio, zNear, zFar);
+
+	static float timer = 0;
 	const float radius = 10.0f;
 	float camX = sin(timer) * radius;
 	float camZ = cos(timer) * radius;
 	timer += 10;
 
-	glm::mat4 view;
 	view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 }
 
