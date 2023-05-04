@@ -10,6 +10,7 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "ModelLoader.h"
+#include "buffer_management.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -248,6 +249,16 @@ void Init(App* app)
     app->glInfo.glVendor = reinterpret_cast<const char*> (glGetString(GL_VENDOR));
     app->glInfo.glShadingVersion = reinterpret_cast<const char*> (glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+    GLint maxUniformBufferSize = 0;
+    GLint uniformBlockAlignment;
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBlockAlignment);
+
+    glGenBuffers(1, &app->bufferHandle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
+    glBufferData(GL_UNIFORM_BUFFER, maxUniformBufferSize, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     GLint numExtensions = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
     for (GLint i = 0; i < numExtensions; ++i)
@@ -289,6 +300,13 @@ void Gui(App* app)
 void Update(App* app)
 {
     app->camera.Update(app);
+
+    //glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
+    //u8 bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    //u32 bufferHead = 0;
+
+
+
 }
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {

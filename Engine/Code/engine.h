@@ -99,6 +99,8 @@ struct App
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides
     
+    GLuint bufferHandle;
+
     // texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;

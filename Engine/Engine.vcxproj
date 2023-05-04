@@ -34,6 +34,7 @@
     <ClCompile Include="ThirdParty\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\buffer_management.h" />
     <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\ModelLoader.h" />
