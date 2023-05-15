@@ -13,7 +13,7 @@ class Camera
 public:
 	Camera();
 	~Camera();
-	void Update(App* app);
+	void Update(glm::vec2 displaySize);
 	
 	float aspectRatio;
 

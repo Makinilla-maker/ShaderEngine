@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include "ModelLoader.h"
 #include "Camera.h"
+#include "buffer_management.h"
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -99,7 +100,11 @@ struct App
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides
     
-    GLuint bufferHandle;
+    //GLuint bufferHandle;
+
+    Buffer uniformBuffer;
+    GLint maxUniformBufferSize = 0;
+    GLint uniformBlockAlignment;
 
     // texture indices
     u32 diceTexIdx;

@@ -22,13 +22,13 @@ out vec2 vTexCoord;
 //out vec3 vPosition;
 //out vec3 vNormal;
 
-uniform mat4 viewMatrix;
-uniform mat4 projection;
+//uniform mat4 viewMatrix;
+//uniform mat4 projection;
 void main()
 {
     vTexCoord = aTexCoord;
 
-    gl_Position = projection * viewMatrix * vec4(aPosition, 1);
+    gl_Position = uWorldViewPorjectionMatrix * vec4(aPosition, 1);
 
     gl_Position.z = -gl_Position.z;
 }

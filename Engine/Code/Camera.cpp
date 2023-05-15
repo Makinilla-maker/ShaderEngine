@@ -2,7 +2,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "engine.h"
+//#include "engine.h"
 
 
 Camera::Camera()
@@ -21,14 +21,15 @@ Camera::Camera()
 	cameraRight = glm::normalize(glm::cross(up, cameraDirection));
 	//Up axis' camera
 	cameraUp = glm::cross(cameraDirection, cameraRight);
+	view = glm::mat4(1);
 }
 
 Camera::~Camera()
 {
 }
-void Camera::Update(App* app)
+void Camera::Update(glm::vec2 displaySize)
 {
-	aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+	aspectRatio = (float)displaySize.x / (float)displaySize.y;
 	
 	projection = glm::perspective(glm::radians(60.0f), aspectRatio, zNear, zFar);
 

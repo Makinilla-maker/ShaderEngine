@@ -10,7 +10,6 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "ModelLoader.h"
-#include "buffer_management.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -237,11 +236,11 @@ void Init(App* app)
     
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj");
 
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    //app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    //app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    //app->blackTexIdx = LoadTexture2D(app, "color_black.png");
+    //app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
+    //app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
 
     app->glInfo.glVersion = reinterpret_cast<const char*> (glGetString(GL_VERSION));
@@ -249,15 +248,15 @@ void Init(App* app)
     app->glInfo.glVendor = reinterpret_cast<const char*> (glGetString(GL_VENDOR));
     app->glInfo.glShadingVersion = reinterpret_cast<const char*> (glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    GLint maxUniformBufferSize = 0;
-    GLint uniformBlockAlignment;
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBlockAlignment);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-    glGenBuffers(1, &app->bufferHandle);
+   /* glGenBuffers(1, &app->bufferHandle);
     glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
     glBufferData(GL_UNIFORM_BUFFER, maxUniformBufferSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+
+    app->uniformBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
     GLint numExtensions = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
@@ -299,14 +298,23 @@ void Gui(App* app)
 
 void Update(App* app)
 {
-    app->camera.Update(app);
+    app->camera.Update(app->displaySize);
 
-    //glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
-    //u8 bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    //u32 bufferHead = 0;
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
 
+    AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
 
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+    memcpy(bufferData + bufferHead, glm::value_ptr(trans), sizeof(glm::mat4));
 
+    memcpy(bufferData + bufferHead, glm::value_ptr(app->camera.projection * app->camera.view * trans),sizeof(glm::mat4));
+    bufferData += sizeof(glm::mat4);
+
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
@@ -390,8 +398,12 @@ void Render(App* app)
             glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
             
             glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
-            glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1,GL_FALSE, glm::value_ptr(app->camera.view));
-            glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1,GL_FALSE, glm::value_ptr(app->camera.projection));
+            //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1,GL_FALSE, glm::value_ptr(app->camera.view));
+            //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1,GL_FALSE, glm::value_ptr(app->camera.projection));
+
+            u32 blockOffset = 0;
+            u32 blockSize = sizeof(glm::mat4)*2;
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, textureMeshProgram.handle,blockOffset,blockSize);
 
             Submesh& submesh = mesh.submeshes[i];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT,(void*)(u64)submesh.indexOffset);
@@ -402,3 +414,4 @@ void Render(App* app)
     default:;
     }
 }
+#define BINDING(b)  b;
