@@ -488,9 +488,7 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
 
                 glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
-                //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1,GL_FALSE, glm::value_ptr(app->camera.view));
-                //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1,GL_FALSE, glm::value_ptr(app->camera.projection));
-
+                
                 glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->uniformBuffer.handle, entity.localParamsOffset, entity.localParamSize);
 
                 Submesh& submesh = mesh.submeshes[i];
