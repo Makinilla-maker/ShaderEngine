@@ -19,7 +19,8 @@ class Camera
 public:
 	Camera();
 	~Camera();
-	void Update(glm::vec2 displaySize);
+	void Update(glm::vec2 displaySize, App* app);
+	void RecalculateCamera();
 	
 	float aspectRatio;
 
@@ -31,6 +32,7 @@ public:
 	glm::vec3 cameraDirection;
 	glm::vec3 cameraUp;
 	glm::vec3 cameraRight;
+	glm::vec3 cameraForward;
 
 	float yaw = -90.0f;
 	float pitch = 0.0f;

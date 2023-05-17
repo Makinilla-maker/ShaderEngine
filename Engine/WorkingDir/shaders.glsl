@@ -39,8 +39,8 @@ out vec3 vPosition;
 out vec3 vNormal;
 out vec3 vViewDir;
 
-uniform mat4 viewMatrix;
-uniform mat4 projection;
+//uniform mat4 viewMatrix;
+//uniform mat4 projection;
 void main()
 {
     vTexCoord = aTexCoord;

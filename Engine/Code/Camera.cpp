@@ -16,30 +16,58 @@ Camera::Camera()
 	//Camera Direction
 	cameraTarget = glm::vec3(0.0f, 2.0f, 0.0f);
 	cameraDirection = glm::normalize(cameraPos - cameraTarget);
-	//Right axis' camera
-	//up = glm::vec3(0.0f, 1.0f, 0.0f);
-	//cameraRight = glm::normalize(glm::cross(up, cameraDirection));
 	//Up axis' camera
 	cameraUp = glm::vec3(0,1,0);
+	//Right axis' camera
+	cameraRight = glm::normalize(glm::cross({ 0,1,0 }, cameraDirection));
+
+	cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 	view = glm::mat4(1);
 }
 
 Camera::~Camera()
 {
 }
-void Camera::Update(glm::vec2 displaySize)
+void Camera::Update(glm::vec2 displaySize, App* app)
 {
+	
+	if (app->input.mouseButtons[MouseButton::RIGHT] == BUTTON_PRESSED)
+	{
+		float speed = 20.0f;
+
+		if (app->input.keys[Key::K_W] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos -= cameraForward * app->deltaTime * speed;
+		}
+		if (app->input.keys[Key::K_S] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos += cameraForward * app->deltaTime * speed;
+		}
+		if (app->input.keys[Key::K_A] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos -= cameraRight * app->deltaTime * speed;
+		}
+		if (app->input.keys[Key::K_D] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos += cameraRight * app->deltaTime * speed;
+		}
+	}
+
 	aspectRatio = (float)displaySize.x / (float)displaySize.y;
 	
 	projection = glm::perspective(glm::radians(60.0f), aspectRatio, zNear, zFar);
 
-	static float timer = 0;
-	const float radius = 10.0f;
-	float camX = sin(timer) * radius;
-	float camZ = cos(timer) * radius;
-	timer += 10;
+	RecalculateCamera();
+}
+void Camera::RecalculateCamera()
+{
+	cameraDirection = glm::normalize(cameraPos - cameraTarget);
+	cameraRight = glm::normalize(glm::cross({ 0,1,0 }, cameraDirection));
+
+	cameraUp = glm::cross(cameraDirection, cameraRight);
+	cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
 	view = glm::lookAt(cameraPos,cameraTarget,cameraUp);
-	//view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+
 }
 

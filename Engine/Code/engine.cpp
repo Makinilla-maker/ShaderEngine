@@ -252,15 +252,7 @@ void Init(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-    glGenBuffers(1, &app->uniformBuffer.handle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
-    glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
     app->uniformBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
-
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
@@ -330,10 +322,10 @@ void Gui(App* app)
     ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
     ImGui::End();
 
-    if (app->input.keys[Key::K_SPACE] == ButtonState::BUTTON_PRESS)
+    /*if (app->input.keys[Key::K_SPACE] == ButtonState::BUTTON_PRESS)
     {
         ImGui::OpenPopup("OpenGL Info");
-    }
+    }*/
 
     if (ImGui::BeginPopup("OpenGL Info"))
     {
@@ -354,10 +346,11 @@ void Gui(App* app)
 
 void Update(App* app)
 {
-    app->camera.Update(app->displaySize);
-    MapBuffer(app->lightBuffer, GL_WRITE_ONLY);
+    app->camera.Update(app->displaySize, app);
+
     ///////////////////////////////////////////Lights///////////////////////////////////////////
     //Global Param
+    MapBuffer(app->lightBuffer, GL_WRITE_ONLY);
 
     app->globalParamsOffset = app->lightBuffer.head;
 
@@ -383,32 +376,6 @@ void Update(App* app)
     MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
     for (Entity& entity : app->entities)
     {
-        /*entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
-
-        AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
-
-        glm::mat4 world = entity.worldMatrix;
-        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.view * world;
-
-        entity.localParamsOffset = app->uniformBuffer.head;
-        //entity.worldMatrix = glm::translate(entity.worldMatrix, glm::vec3(1.0f, 1.0f, 0.0f));
-        PushData(app->uniformBuffer, glm::value_ptr(world), sizeof(glm::mat4));
-        PushData(app->uniformBuffer, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
-        //PushMat4(app->uniformBuffer,world);
-        //PushMat4(app->uniformBuffer,worldViewProjectionMatrix);
-
-        entity.localParamSize = app->uniformBuffer.head - entity.localParamsOffset;*/
-
-        //AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
-        //Align(bufferHead, app->uniformBlockAlignment);
-
-        //memcpy(bufferData + bufferHead, glm::value_ptr(trans), sizeof(glm::mat4));
-        //bufferData += sizeof(glm::mat4);
-        //bufferData + bufferHead
-
-        //memcpy(bufferData + bufferHead, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
-        //bufferData += sizeof(glm::mat4);
-
         entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
         glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
                 
@@ -490,7 +457,7 @@ void Render(App* app)
         // - bind the vao
         // - glDrawElements() !!!
 
-        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+        //glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
 
         GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
         glDrawBuffers(1, drawBuffers);
@@ -503,7 +470,7 @@ void Render(App* app)
         Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(textureMeshProgram.handle);
 
-        glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->lightBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
 
         for (Entity entity : app->entities)
         {
@@ -530,7 +497,7 @@ void Render(App* app)
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+        //glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
     }
     break;
 
