@@ -117,6 +117,7 @@ struct App
     //GLuint bufferHandle;
 
     Buffer uniformBuffer;
+    Buffer lightBuffer;
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
 

@@ -259,6 +259,11 @@ void Init(App* app)
 
     app->uniformBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
+
+    app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj");
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 
@@ -350,31 +355,32 @@ void Gui(App* app)
 void Update(App* app)
 {
     app->camera.Update(app->displaySize);
-
-    MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
+    MapBuffer(app->lightBuffer, GL_WRITE_ONLY);
     ///////////////////////////////////////////Lights///////////////////////////////////////////
     //Global Param
 
-    app->globalParamsOffset = app->uniformBuffer.head;
+    app->globalParamsOffset = app->lightBuffer.head;
 
-    PushVec3(app->uniformBuffer, app->camera.cameraPos);
-    PushUInt(app->uniformBuffer, app->lights.size());
+    PushVec3(app->lightBuffer, app->camera.cameraPos);
+    PushUInt(app->lightBuffer, app->lights.size());
 
     for (u32 i = 0; i < app->lights.size(); ++i)
     {
-        AlignHead(app->uniformBuffer, sizeof(vec4));
+        AlignHead(app->lightBuffer, sizeof(vec4));
 
         Light& light = app->lights[i];
-        PushUInt(app->uniformBuffer, light.type);
-        PushVec3(app->uniformBuffer, light.color);
-        PushVec3(app->uniformBuffer, light.direction);
-        PushVec3(app->uniformBuffer, light.position);
+        PushUInt(app->lightBuffer, light.type);
+        PushVec3(app->lightBuffer, light.color);
+        PushVec3(app->lightBuffer, light.direction);
+        PushVec3(app->lightBuffer, light.position);
+        PushData(app->lightBuffer, &light.intesity, sizeof(float));
     }
 
-    app->globalParamsSize = app->uniformBuffer.head - app->globalParamsOffset;
-
+    app->globalParamsSize = app->lightBuffer.head - app->globalParamsOffset;
+    UnmapBuffer(app->lightBuffer);
     ///////////////////////////////////////////EndLights///////////////////////////////////////////
     ///////////////////////////////////////////Entities///////////////////////////////////////////
+    MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
     for (Entity& entity : app->entities)
     {
         /*entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
@@ -417,6 +423,7 @@ void Update(App* app)
 
         entity.localParamSize = app->uniformBuffer.head - entity.localParamsOffset;
 
+        int ligma = 0;
     }
     ///////////////////////////////////////////EndEntities///////////////////////////////////////////
     UnmapBuffer(app->uniformBuffer);
