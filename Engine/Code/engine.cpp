@@ -5,11 +5,10 @@
 // graphics related GUI options, and so on.
 //
 
-#include "engine.h"
+#include "Global.h"
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
-#include "ModelLoader.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -78,6 +77,7 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
     {
         glGetProgramInfoLog(programHandle, infoLogBufferSize, &infoLogSize, infoLogBuffer);
         ELOG("glLinkProgram() failed with program %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
+        assert(success);
     }
 
     glUseProgram(0);
@@ -213,6 +213,8 @@ void Init(App* app)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
     glBindVertexArray(0);
 
+    app->lights.emplace_back(Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }));
+
     app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     //textureMeshProgram.vertexInputLayout.attributes.push_back({0, 3});
@@ -234,7 +236,6 @@ void Init(App* app)
         textureMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
     }
     
-    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj");
 
     //app->diceTexIdx = LoadTexture2D(app, "dice.png");
     //app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
@@ -251,12 +252,62 @@ void Init(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-   /* glGenBuffers(1, &app->bufferHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->bufferHandle);
-    glBufferData(GL_UNIFORM_BUFFER, maxUniformBufferSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+    glGenBuffers(1, &app->uniformBuffer.handle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
+    glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     app->uniformBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+
+    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj");
+    ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
+
+    glGenTextures(1, &app->frameBuffer.colorAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.colorAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->frameBuffer.depthAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.depthAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &app->frameBuffer.frameBufferHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->frameBuffer.colorAttachmentHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->frameBuffer.depthAttachmentHandle,0);
+
+    app->frameBuffer.frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (app->frameBuffer.frameBufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (app->frameBuffer.frameBufferStatus)
+        {
+            case GL_FRAMEBUFFER_UNDEFINED:                      ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+            case GL_FRAMEBUFFER_UNSUPPORTED:                    ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+            default: ELOG("Unknown framebuffer status error");
+        }
+    }
+
+    glDrawBuffers(1, &app->frameBuffer.colorAttachmentHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    ///////////////////////////////////////////EndFrameBuffer///////////////////////////////////////////
 
     GLint numExtensions = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
@@ -300,22 +351,79 @@ void Update(App* app)
 {
     app->camera.Update(app->displaySize);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
+    MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
+    ///////////////////////////////////////////Lights///////////////////////////////////////////
+    //Global Param
 
-    AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
+    app->globalParamsOffset = app->uniformBuffer.head;
 
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
-    memcpy(bufferData + bufferHead, glm::value_ptr(trans), sizeof(glm::mat4));
+    PushVec3(app->uniformBuffer, app->camera.cameraPos);
+    PushUInt(app->uniformBuffer, app->lights.size());
 
-    memcpy(bufferData + bufferHead, glm::value_ptr(app->camera.projection * app->camera.view * trans),sizeof(glm::mat4));
-    bufferData += sizeof(glm::mat4);
+    for (u32 i = 0; i < app->lights.size(); ++i)
+    {
+        AlignHead(app->uniformBuffer, sizeof(vec4));
 
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        Light& light = app->lights[i];
+        PushUInt(app->uniformBuffer, light.type);
+        PushVec3(app->uniformBuffer, light.color);
+        PushVec3(app->uniformBuffer, light.direction);
+        PushVec3(app->uniformBuffer, light.position);
+    }
+
+    app->globalParamsSize = app->uniformBuffer.head - app->globalParamsOffset;
+
+    ///////////////////////////////////////////EndLights///////////////////////////////////////////
+    ///////////////////////////////////////////Entities///////////////////////////////////////////
+    for (Entity& entity : app->entities)
+    {
+        /*entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
+
+        AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
+
+        glm::mat4 world = entity.worldMatrix;
+        glm::mat4 worldViewProjectionMatrix = app->camera.projection * app->camera.view * world;
+
+        entity.localParamsOffset = app->uniformBuffer.head;
+        //entity.worldMatrix = glm::translate(entity.worldMatrix, glm::vec3(1.0f, 1.0f, 0.0f));
+        PushData(app->uniformBuffer, glm::value_ptr(world), sizeof(glm::mat4));
+        PushData(app->uniformBuffer, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
+        //PushMat4(app->uniformBuffer,world);
+        //PushMat4(app->uniformBuffer,worldViewProjectionMatrix);
+
+        entity.localParamSize = app->uniformBuffer.head - entity.localParamsOffset;*/
+
+        //AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
+        //Align(bufferHead, app->uniformBlockAlignment);
+
+        //memcpy(bufferData + bufferHead, glm::value_ptr(trans), sizeof(glm::mat4));
+        //bufferData += sizeof(glm::mat4);
+        //bufferData + bufferHead
+
+        //memcpy(bufferData + bufferHead, glm::value_ptr(worldViewProjectionMatrix), sizeof(glm::mat4));
+        //bufferData += sizeof(glm::mat4);
+
+        entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
+        glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
+                
+        AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
+
+        entity.localParamsOffset = app->uniformBuffer.head;
+
+        glm::mat4 trans = entity.worldMatrix;
+        trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+        PushMat4(app->uniformBuffer, trans);
+        PushMat4(app->uniformBuffer, app->camera.projection * app->camera.view * trans);
+
+        entity.localParamSize = app->uniformBuffer.head - entity.localParamsOffset;
+
+    }
+    ///////////////////////////////////////////EndEntities///////////////////////////////////////////
+    UnmapBuffer(app->uniformBuffer);
+
+    
 }
+
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
@@ -375,7 +483,12 @@ void Render(App* app)
         // - bind the vao
         // - glDrawElements() !!!
 
-        glClearColor(1.0, 0.1, 0.1, 1.0);
+        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+
+        GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+        glDrawBuffers(1, drawBuffers);
+
+        glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -383,35 +496,38 @@ void Render(App* app)
         Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(textureMeshProgram.handle);
 
-        Model& model = app->models[app->modelPatrick];
-        Mesh& mesh = app->meshes[model.meshIdx];
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->uniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
 
-        for (u32 i = 0; i<mesh.submeshes.size();++i)
+        for (Entity entity : app->entities)
         {
-            GLuint vao = FindVAO(mesh, i, textureMeshProgram);
-            glBindVertexArray(vao);
+            Mesh& mesh = app->meshes[entity.modelIndex];
 
-            u32 submeshMaterialIdx = model.materialIdx[i];
-            Material& submeshMaterial = app->materials[submeshMaterialIdx];
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, textureMeshProgram);
+                glBindVertexArray(vao);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-            
-            glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
-            //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1,GL_FALSE, glm::value_ptr(app->camera.view));
-            //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1,GL_FALSE, glm::value_ptr(app->camera.projection));
+                u32 submeshMaterialIdx = entity.materialIdx[i];
+                Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-            u32 blockOffset = 0;
-            u32 blockSize = sizeof(glm::mat4)*2;
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, textureMeshProgram.handle,blockOffset,blockSize);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
 
-            Submesh& submesh = mesh.submeshes[i];
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT,(void*)(u64)submesh.indexOffset);
+                glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
+                //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1,GL_FALSE, glm::value_ptr(app->camera.view));
+                //glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1,GL_FALSE, glm::value_ptr(app->camera.projection));
+
+                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->uniformBuffer.handle, entity.localParamsOffset, entity.localParamSize);
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            }
         }
+        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
     }
     break;
 
     default:;
     }
 }
-#define BINDING(b)  b;
+

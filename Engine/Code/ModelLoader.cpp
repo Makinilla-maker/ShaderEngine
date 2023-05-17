@@ -1,8 +1,11 @@
-#include "ModelLoader.h"
+#include "Global.h"
+#include "Entities.h"
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "engine.h"
+
+
+class Entity;
 
 void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
 {
@@ -187,10 +190,10 @@ u32 LoadModel(App* app, const char* filename)
     Mesh& mesh = app->meshes.back();
     u32 meshIdx = (u32)app->meshes.size() - 1u;
 
-    app->models.push_back(Model{});
-    Model& model = app->models.back();
-    model.meshIdx = meshIdx;
-    u32 modelIdx = (u32)app->models.size() - 1u;
+    app->entities.push_back(Entity{});
+    Entity& entity = app->entities.back();
+    entity.modelIndex = meshIdx;
+    u32 modelIdx = (u32)app->entities.size() - 1u;
 
     String directory = GetDirectoryPart(MakeString(filename));
 
@@ -203,7 +206,7 @@ u32 LoadModel(App* app, const char* filename)
         ProcessAssimpMaterial(app, scene->mMaterials[i], material, directory);
     }
 
-    ProcessAssimpNode(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, model.materialIdx);
+    ProcessAssimpNode(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, entity.materialIdx);
 
     aiReleaseImport(scene);
 
@@ -246,4 +249,15 @@ u32 LoadModel(App* app, const char* filename)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     return modelIdx;
+}
+glm::mat4 Entity::TransformScale(const glm::vec3& scaleFactors)
+{
+    glm::mat4 transform = glm::scale(scaleFactors);
+    return transform;
+}
+glm::mat4 Entity::TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors)
+{
+    glm::mat4 transform = glm::translate(pos);
+    transform = glm::scale(transform, scaleFactors);
+    return transform;
 }

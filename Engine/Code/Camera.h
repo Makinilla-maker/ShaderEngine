@@ -2,11 +2,17 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "platform.h"
 #include <glad/glad.h>
 
 
 class App;
+
+//enum CameraMovement {
+//	FORWARD,
+//	BACKWARD,
+//	LEFT,
+//	RIGHT
+//};
 
 class Camera
 {
@@ -22,14 +28,18 @@ public:
 	glm::mat4 projection;
 
 	glm::vec3 cameraPos;
-
-	glm::vec3 cameraTarget;
 	glm::vec3 cameraDirection;
-
-	glm::vec3 up;
+	glm::vec3 cameraUp;
 	glm::vec3 cameraRight;
 
-	glm::vec3 cameraUp;
+	float yaw = -90.0f;
+	float pitch = 0.0f;
+
+	float movementSpeed = 0.5f;
+
+	glm::vec3 cameraTarget;
+
+
 	glm::mat4 view;
 
 	

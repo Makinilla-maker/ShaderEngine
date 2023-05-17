@@ -3,6 +3,14 @@
 ///////////////////////////////////////////////////////////////////////
 #ifdef TEXTURED_GEOMETRY
 
+struct Light
+{
+    unsigned int type;
+    vec3 color;
+    vec3 direction;
+    vec3 position;
+};
+
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
 // TODO: Write your vertex shader here
@@ -12,6 +20,14 @@ layout(location=1) in vec3 aNormal;
 layout(location=2) in vec2 aTexCoord;
 layout(location=3) in vec3 aTangent;
 layout(location=4) in vec3 aBitangent;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+    vec3 uCameraPosition;
+    unsigned int uLightCount;
+    Light uLight[16];
+};
+
 layout(binding = 1, std140) uniform LocalParams
 {
     mat4 uWorldMatrix;
@@ -19,18 +35,26 @@ layout(binding = 1, std140) uniform LocalParams
 };
 
 out vec2 vTexCoord;
-//out vec3 vPosition;
-//out vec3 vNormal;
+out vec3 vPosition;
+out vec3 vNormal;
+out vec3 vViewDir;
 
-//uniform mat4 viewMatrix;
-//uniform mat4 projection;
+uniform mat4 viewMatrix;
+uniform mat4 projection;
 void main()
 {
     vTexCoord = aTexCoord;
 
-    gl_Position = uWorldViewPorjectionMatrix * vec4(aPosition, 1);
+    //gl_Position = uWorldViewPorjectionMatrix * vec4(aPosition, 1);
+    //gl_Position.z = -gl_Position.z;
 
-    gl_Position.z = -gl_Position.z;
+    vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0));
+
+    vNormal = vec3(uWorldMatrix * vec4(aNormal, 0.0));
+
+    vViewDir = uCameraPosition - vPosition;
+
+    gl_Position = uWorldViewPorjectionMatrix * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -38,8 +62,18 @@ void main()
 // TODO: Write your fragment shader here
 
 in vec2 vTexCoord;
+in vec3 vPosition;
+in vec3 vNormal;
+in vec3 vViewDir;
 
 uniform sampler2D uTexture;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+    vec3 uCameraPosition;
+    unsigned int uLightCount;
+    Light uLight[16];
+};
 
 layout(location=0) out vec4 oColor;
 

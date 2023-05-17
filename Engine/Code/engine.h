@@ -4,11 +4,9 @@
 
 #pragma once
 
-#include "platform.h"
 #include <glad/glad.h>
-#include "ModelLoader.h"
-#include "Camera.h"
-#include "buffer_management.h"
+#include "Entities.h"
+
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -16,6 +14,8 @@ typedef glm::vec4  vec4;
 typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
+
+class Camera;
 
 struct Image
 {
@@ -75,6 +75,14 @@ const u16 indices[] =
     0,1,2,
     0,2,3
 };
+class FrameBuffer
+{
+public:
+    GLuint colorAttachmentHandle = -1;
+    GLuint depthAttachmentHandle = -1;
+    GLuint frameBufferHandle = -1;
+    GLuint frameBufferStatus = -1;
+};
 
 struct App
 {
@@ -95,7 +103,13 @@ struct App
     std::vector<Program>  programs; //programms loaded
     std::vector<Material> materials;
     std::vector<Mesh> meshes;
-    std::vector<Model> models;
+    std::vector<Entity> entities;
+    std::vector<Light> lights;
+
+    u32 globalParamsOffset;
+    u32 globalParamsSize;
+
+    FrameBuffer frameBuffer;
 
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides

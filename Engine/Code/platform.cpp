@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-#include "engine.h"
+#include "Global.h"
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
