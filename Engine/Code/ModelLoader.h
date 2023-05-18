@@ -62,7 +62,7 @@ class Light
 {
 public:
 	Light() {}
-	Light(LightType lightType, const glm::vec3& position, const glm::vec3& color)
+	Light(LightType lightType, const glm::vec3& position, const glm::vec3& _color, const glm::vec3 d)
 	{
 		{
 			switch (type)
@@ -70,12 +70,14 @@ public:
 				case LightType::DIRECTIONAL:
 				{
 					direction = glm::normalize(position);
+					color = _color;
 					name = "Directional Light";
 					break;
 				}
 				case LightType::POINT_LIGHT:
 				{
 					name = "Point Light";
+					direction = d;
 					this->position = position;
 					break;
 				}
@@ -86,18 +88,6 @@ public:
 	{
 
 	}
-	/*
-	std::string GetName() { return name; }
-	LightType GetType() { return type; }
-	glm::vec3 GetColor() { return color; }
-	glm::vec3 GetDirection() { return direction; }
-	glm::vec3 GetPosition() { return position; }
-
-	void SetName(std::string n) { name = n; }
-	void SetType(LightType t) { type = t; }
-	void SetColor(glm::vec3 c) { color = c; }
-	void SetDirection(glm::vec3 d) { direction = d; }
-	void SetPosition(glm::vec3 p) { position = p; }*/
 
 public:
 	std::string name;

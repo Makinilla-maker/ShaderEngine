@@ -52,7 +52,7 @@ void main()
 
     vNormal = vec3(uWorldMatrix * vec4(aNormal, 0.0));
 
-    vViewDir = uCameraPosition - vPosition;
+    vViewDir = normalize(uCameraPosition - vPosition);
 
     gl_Position = uWorldViewPorjectionMatrix * vec4(aPosition, 1.0);
 }
@@ -79,7 +79,27 @@ layout(location=0) out vec4 oColor;
 
 void main()
 {
-    oColor = texture(uTexture, vTexCoord);
+    vec3 lightStrenght = vec3(0.0);
+    for(int i = 0; i< uLightCount; ++i)
+    {
+        float ambientStrenght = 0.2;
+        vec3 ambient = ambientStrenght * uLight[i].color;
+        
+        float diff = max(dot(normalize(vNormal), normalize(uLight[i].direction)), 0.0);
+
+        vec3 diffuse = diff * uLight[i].color;
+
+        float specularStrength = 0.5;
+
+        vec3 reflectDir = reflect(normalize(-uLight[i].direction), normalize(vNormal));
+
+        float spec = pow(max(dot(normalize(vViewDir), reflectDir), 0.0), 32);
+        vec3 specular = specularStrength * spec * uLight[i].color;
+
+        lightStrenght += (ambient + diffuse + specular) * texture(uTexture, vTexCoord).rgb;
+    }
+    oColor = vec4(lightStrenght, 1.0);
+   //oColor = vec4(uLight[0].color, 1.0);
 }
 
 #endif

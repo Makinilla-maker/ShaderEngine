@@ -213,7 +213,14 @@ void Init(App* app)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
     glBindVertexArray(0);
 
-    app->lights.emplace_back(Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }));
+    Light light1;  
+    light1.color = { 1 ,1, 1 };
+    light1.position = { 1 ,1, 1 };
+    light1.type = LightType::DIRECTIONAL;
+    
+    //Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+
+    app->lights.emplace_back(light1);
 
     app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
@@ -459,13 +466,16 @@ void Render(App* app)
 
         //glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
 
+        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+        glEnable(GL_DEPTH_TEST);
+
         GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
         glDrawBuffers(1, drawBuffers);
 
         glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
         Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(textureMeshProgram.handle);
