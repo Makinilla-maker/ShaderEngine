@@ -364,6 +364,45 @@ void Gui(App* app)
     {
         ImGui::OpenPopup("OpenGL Info");
     }
+
+    const char* items[] = { "Colors", "Normal", "Position", "Depth"};
+    static int item_current_idx = 0;
+    const char* combo_label = items[item_current_idx];
+
+    if (ImGui::BeginCombo("combo 1", combo_label))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+        {
+            const bool is_selected = (item_current_idx == n);
+            if (ImGui::Selectable(items[n], is_selected))
+            {
+                item_current_idx = n;
+                switch (n)
+                {
+                case 0:
+                    app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
+                    break;
+                case 1:
+                    app->finalAttachment = app->frameBuffer.normalAttachment;
+                    break;
+                case 2:
+                    app->finalAttachment = app->frameBuffer.positionAttachment;
+                    break;
+                case 3:
+                    app->finalAttachment = app->frameBuffer.depthAttachmentHandle;
+                    break;
+                default:
+                    app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
+                    break;
+                }
+            }
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
     
     ImGui::ShowDemoWindow();
 
@@ -553,7 +592,7 @@ void Render(App* app)
         glUniform1i(glGetUniformLocation(frameBufferProgram.handle, "uTexture"), 0);
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->frameBuffer.normalAttachment);
+        glBindTexture(GL_TEXTURE_2D, app->finalAttachment);
 
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);

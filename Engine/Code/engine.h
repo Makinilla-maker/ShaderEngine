@@ -124,14 +124,10 @@ struct App
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
 
-    // texture indices
-    u32 diceTexIdx;
-    u32 whiteTexIdx;
-    u32 blackTexIdx;
-    u32 normalTexIdx;
-    u32 magentaTexIdx;
-
+    GLuint finalAttachment;
     u32 modelPatrick;
+    u32 modelPatrick1;
+    u32 modelPatrick2;
     u8 texturedMeshProgram_uTexture;
 
     // Mode
