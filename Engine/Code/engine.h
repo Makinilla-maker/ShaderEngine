@@ -64,10 +64,10 @@ struct VertexV2V3
 };
 
 const VertexV2V3 vertices[] = {
-    {glm::vec3(-0.5,-0.5,0.0),glm::vec2(0.0,0.0)},
-    {glm::vec3(0.5,-0.5,0.0),glm::vec2(1.0,0.0)},
-    {glm::vec3(0.5,0.5,0.0),glm::vec2(1.0,1.0)},
-    {glm::vec3(-0.5,0.5,0.0),glm::vec2(0.0,1.0)},
+    {glm::vec3(-1.0,-1.0,0.0),glm::vec2(0.0,0.0)},
+    {glm::vec3(1.0,-1.0,0.0),glm::vec2(1.0,0.0)},
+    {glm::vec3(1.0,1.0,0.0),glm::vec2(1.0,1.0)},
+    {glm::vec3(-1.0,1.0,0.0),glm::vec2(0.0,1.0)},
 
 };
 const u16 indices[] =
@@ -82,6 +82,8 @@ public:
     GLuint depthAttachmentHandle = -1;
     GLuint frameBufferHandle = -1;
     GLuint frameBufferStatus = -1;
+    GLuint normalAttachment = -1;
+    GLuint positionAttachment = -1;
 };
 
 struct App
@@ -113,6 +115,7 @@ struct App
 
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides
+    u32 frameBufferProgramIdx; 
     
     //GLuint bufferHandle;
 

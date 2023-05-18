@@ -62,14 +62,14 @@ class Light
 {
 public:
 	Light() {}
-	Light(LightType lightType, const glm::vec3& position, const glm::vec3& _color, const glm::vec3 d)
+	Light(LightType lightType, const glm::vec3& _position, const glm::vec3& _color, const glm::vec3 d)
 	{
-		{
-			switch (type)
+		
+			switch (lightType)
 			{
 				case LightType::DIRECTIONAL:
 				{
-					direction = glm::normalize(position);
+					direction = glm::normalize(_position);
 					color = _color;
 					name = "Directional Light";
 					break;
@@ -82,7 +82,7 @@ public:
 					break;
 				}
 			}
-		}
+		
 	}
 	virtual ~Light()
 	{

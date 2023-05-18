@@ -212,20 +212,15 @@ void Init(App* app)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
     glBindVertexArray(0);
+        
+    Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
 
-    Light light1;  
-    light1.color = { 1 ,1, 1 };
-    light1.position = { 1 ,1, 1 };
-    light1.type = LightType::DIRECTIONAL;
-    
-    //Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+    app->lights.emplace_back(lightdios);
 
-    app->lights.emplace_back(light1);
+    app->texturedMeshProgramIdx = LoadProgram(app, "geometryShaders.glsl", "TEXTURED_GEOMETRY");
+    app->frameBufferProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    //textureMeshProgram.vertexInputLayout.attributes.push_back({0, 3});
-    //textureMeshProgram.vertexInputLayout.attributes.push_back({2, 3});
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
     
     GLsizei length;
@@ -241,6 +236,20 @@ void Init(App* app)
         u8 test = sizeof(type);
 
         textureMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
+    //////
+
+    Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
+    glGetProgramiv(frameBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &frameBufferProgram.lenght);
+
+    for (u32 i = 0; i < frameBufferProgram.lenght; ++i)
+    {
+        glGetActiveAttrib(frameBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(frameBufferProgram.handle, name);
+
+        u8 test = sizeof(type);
+
+        frameBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
     }
     
 
@@ -276,6 +285,26 @@ void Init(App* app)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glGenTextures(1, &app->frameBuffer.normalAttachment);
+    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.normalAttachment);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->frameBuffer.positionAttachment);
+    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.positionAttachment);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     glGenTextures(1, &app->frameBuffer.depthAttachmentHandle);
     glBindTexture(GL_TEXTURE_2D, app->frameBuffer.depthAttachmentHandle);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -289,6 +318,8 @@ void Init(App* app)
     glGenFramebuffers(1, &app->frameBuffer.frameBufferHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->frameBuffer.colorAttachmentHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->frameBuffer.normalAttachment, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->frameBuffer.positionAttachment, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->frameBuffer.depthAttachmentHandle,0);
 
     app->frameBuffer.frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -329,10 +360,12 @@ void Gui(App* app)
     ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
     ImGui::End();
 
-    /*if (app->input.keys[Key::K_SPACE] == ButtonState::BUTTON_PRESS)
+    if (app->input.keys[Key::K_SPACE] == ButtonState::BUTTON_PRESS)
     {
         ImGui::OpenPopup("OpenGL Info");
-    }*/
+    }
+    
+    ImGui::ShowDemoWindow();
 
     if (ImGui::BeginPopup("OpenGL Info"))
     {
@@ -464,14 +497,14 @@ void Render(App* app)
         // - bind the vao
         // - glDrawElements() !!!
 
-        //glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
         glEnable(GL_DEPTH_TEST);
 
-        GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-        glDrawBuffers(1, drawBuffers);
+        GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, drawBuffers);
 
         glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -505,7 +538,26 @@ void Render(App* app)
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
         }
-        //glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        //////FrameBuffer
+
+        Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
+        glUseProgram(frameBufferProgram.handle);
+
+        glClearColor(0.1, 0.1, 0.1, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glBindVertexArray(app->vao);
+
+        glUniform1i(glGetUniformLocation(frameBufferProgram.handle, "uTexture"), 0);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->frameBuffer.normalAttachment);
+
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
     }
     break;
 

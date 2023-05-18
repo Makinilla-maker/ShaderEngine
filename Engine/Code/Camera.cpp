@@ -37,11 +37,11 @@ void Camera::Update(glm::vec2 displaySize, App* app)
 
 		if (app->input.keys[Key::K_W] == ButtonState::BUTTON_PRESSED)
 		{
-			cameraPos -= cameraForward * app->deltaTime * speed;
+			cameraPos += cameraForward * app->deltaTime * speed;
 		}
 		if (app->input.keys[Key::K_S] == ButtonState::BUTTON_PRESSED)
 		{
-			cameraPos += cameraForward * app->deltaTime * speed;
+			cameraPos -= cameraForward * app->deltaTime * speed;
 		}
 		if (app->input.keys[Key::K_A] == ButtonState::BUTTON_PRESSED)
 		{
