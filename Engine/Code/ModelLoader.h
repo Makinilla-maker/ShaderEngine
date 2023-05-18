@@ -78,6 +78,10 @@ public:
 					color = _color;
 					name = "Directional Light";
 					type = lightType;
+					intesity = _intensity;
+					{
+
+					};
 					break;
 				}
 				case LightType::POINT_LIGHT:

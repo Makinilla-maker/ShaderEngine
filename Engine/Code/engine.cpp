@@ -332,12 +332,19 @@ void Init(App* app)
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
 
     app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
+
     //app->modelPatrick = LoadModel(app,"Patrick/Plane.obj", std::string("Plane"), {0,0,0}, {0,0,0}, {1,1,1});
 
     Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
     app->lights.emplace_back(lightdios);
 
-    Light lightdios1 = Light(LightType::POINT_LIGHT, { -6, 0, 1 }, { 0. ,0., 1. }, 10.0f, glm::normalize(glm::vec3(0, 0, 0)));
+    Light lightdios1 = Light(LightType::DIRECTIONAL, { 10, 1, 5 }, { 1 ,0, 0 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+    app->lights.emplace_back(lightdios1);
+
+    Light lightdios2 = Light(LightType::DIRECTIONAL, { -10, -6, 1 }, { 1 ,1, 0 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+    app->lights.emplace_back(lightdios2);
+
+    Light PointLight = Light(LightType::POINT_LIGHT, { -6, 0, 1 }, { 0. ,0., 1. }, 10.0f, glm::normalize(glm::vec3(0, 0, 0)));
     //app->lights.emplace_back(lightdios1);
 
 
