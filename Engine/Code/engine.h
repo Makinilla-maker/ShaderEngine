@@ -106,12 +106,15 @@ struct App
     std::vector<Material> materials;
     std::vector<Mesh> meshes;
     std::vector<Entity> entities;
+    int selectedEntity;
     std::vector<Light> lights;
 
     u32 globalParamsOffset;
     u32 globalParamsSize;
 
     FrameBuffer frameBuffer;
+
+    int depth;
 
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides

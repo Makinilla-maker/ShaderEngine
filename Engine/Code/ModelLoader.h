@@ -42,7 +42,12 @@ struct  Model
 class Entity
 {
 public:
+	std::string name;
+	glm::vec3 position;
+	glm::vec3 rotation;
+	glm::vec3 scale;
 	glm::mat4 worldMatrix;
+
 	u32 modelIndex;
 	u32 localParamsOffset;
 	u32 localParamSize;
@@ -62,7 +67,7 @@ class Light
 {
 public:
 	Light() {}
-	Light(LightType lightType, const glm::vec3& _position, const glm::vec3& _color, const glm::vec3 d)
+	Light(LightType lightType, const glm::vec3& _position, const glm::vec3& _color, const float _intensity, const glm::vec3 d)
 	{
 		
 			switch (lightType)
@@ -72,6 +77,7 @@ public:
 					direction = glm::normalize(_position);
 					color = _color;
 					name = "Directional Light";
+					type = lightType;
 					break;
 				}
 				case LightType::POINT_LIGHT:
@@ -79,6 +85,8 @@ public:
 					name = "Point Light";
 					direction = d;
 					this->position = position;
+					intesity = _intensity;
+					type = lightType;
 					break;
 				}
 			}
@@ -132,6 +140,6 @@ struct Mesh
 	GLuint indexBufferHandle;
 };
 
-u32 LoadModel(App* app, const char* filename);
+u32 LoadModel(App* app, const char* filename, std::string name,glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
 
 #endif // MODEL_LOADER_H

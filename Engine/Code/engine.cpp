@@ -7,6 +7,7 @@
 
 #include "Global.h"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 
@@ -179,6 +180,68 @@ u32 LoadTexture2D(App* app, const char* filepath)
     }
 }
 
+bool DrawVec3(const char* name, glm::vec3& vec)
+{
+    glm::vec3 lastVec = vec;
+    ImGui::PushID(name);
+
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 100.0f);
+    ImGui::Text(name);
+    ImGui::NextColumn();
+
+    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0,0 });
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+    ImGui::Button("X");
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##X", &vec.x, 0.1f, 0.0f, 0.0f, "%.2f");
+    if (ImGui::IsItemActivated())
+        //CommandDispatcher::Execute(new MoveGameObjectCommand(owner));
+        ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+    ImGui::Button("Y");
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##Y", &vec.y, 0.1f, 0.0f, 0.0f, "%.2f");
+    if (ImGui::IsItemActivated())
+        //CommandDispatcher::Execute(new MoveGameObjectCommand(owner));
+        ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+    ImGui::Button("Z");
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##Z", &vec.z, 0.1f, 0.0f, 0.0f, "%.2f");
+    if (ImGui::IsItemActivated())
+        //CommandDispatcher::Execute(new MoveGameObjectCommand(owner));
+        ImGui::PopItemWidth();
+
+    ImGui::PopStyleVar();
+
+    ImGui::Columns(1);
+
+    ImGui::PopID();
+
+    if (lastVec.x != vec.x || lastVec.y != vec.y || lastVec.z != vec.z)
+        return true;
+    else return false;
+}
+
 void Init(App* app)
 {
     // TODO: Initialize your resources here!
@@ -212,16 +275,13 @@ void Init(App* app)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
     glBindVertexArray(0);
-        
-    Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
-
-    app->lights.emplace_back(lightdios);
 
     app->texturedMeshProgramIdx = LoadProgram(app, "geometryShaders.glsl", "TEXTURED_GEOMETRY");
     app->frameBufferProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
 
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
+
     
     GLsizei length;
     GLint size;
@@ -252,12 +312,7 @@ void Init(App* app)
         frameBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
     }
     
-
-    //app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    //app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    //app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    //app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    //app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    app->depth = 0;
 
 
     app->glInfo.glVersion = reinterpret_cast<const char*> (glGetString(GL_VERSION));
@@ -272,7 +327,20 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj");
+    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
+    app->selectedEntity = 0;
+    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
+
+    app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
+    //app->modelPatrick = LoadModel(app,"Patrick/Plane.obj", std::string("Plane"), {0,0,0}, {0,0,0}, {1,1,1});
+
+    Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+    app->lights.emplace_back(lightdios);
+
+    Light lightdios1 = Light(LightType::POINT_LIGHT, { -6, 0, 1 }, { 0. ,0., 1. }, 10.0f, glm::normalize(glm::vec3(0, 0, 0)));
+    //app->lights.emplace_back(lightdios1);
+
+
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 
     glGenTextures(1, &app->frameBuffer.colorAttachmentHandle);
@@ -351,25 +419,60 @@ void Init(App* app)
         app->glInfo.glExtension.push_back(reinterpret_cast<const char*> (glGetStringi(GL_EXTENSIONS, GLuint(i))));
     }
 
+    app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
     app->mode = Mode_TexturedQuad;
+}
+void ShowChildren(App* app)
+{
+    for (int i = 0; i < app->entities.size(); ++i)
+    {
+        if (ImGui::Button(app->entities[i].name.c_str()))
+        {
+            app->selectedEntity = i;
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
+    ImGui::Text("Lights: ");
+
+    for (int i = 0; i < app->lights.size(); ++i)
+    {
+        if (ImGui::Button(app->lights[i].name.c_str()))
+        {
+            //app->selectedEntity = i + app->entities.size();
+        }
+    }
+    
 }
 
 void Gui(App* app)
 {
     ImGui::Begin("Info");
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
     ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-    ImGui::End();
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
     if (app->input.keys[Key::K_SPACE] == ButtonState::BUTTON_PRESS)
     {
         ImGui::OpenPopup("OpenGL Info");
     }
+    if (DrawVec3("Position: ", app->entities[app->selectedEntity].position))
+    {
+        app->entities[app->selectedEntity].worldMatrix = app->entities[app->selectedEntity].TransformPositionScale(app->entities[app->selectedEntity].position, glm::vec3(1.0f));
+    }
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-    const char* items[] = { "Colors", "Normal", "Position", "Depth"};
+    const char* items[] = { "Albedo", "Normal", "Position", "Depth"};
     static int item_current_idx = 0;
     const char* combo_label = items[item_current_idx];
 
-    if (ImGui::BeginCombo("combo 1", combo_label))
+    ImGui::Text("Render Mode: ");
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    if (ImGui::BeginCombo("", combo_label))
     {
         for (int n = 0; n < IM_ARRAYSIZE(items); n++)
         {
@@ -381,15 +484,19 @@ void Gui(App* app)
                 {
                 case 0:
                     app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
+                    app->depth = 0;
                     break;
                 case 1:
                     app->finalAttachment = app->frameBuffer.normalAttachment;
+                    app->depth = 0;
                     break;
                 case 2:
                     app->finalAttachment = app->frameBuffer.positionAttachment;
+                    app->depth = 0;
                     break;
                 case 3:
                     app->finalAttachment = app->frameBuffer.depthAttachmentHandle;
+                    app->depth = 1;
                     break;
                 default:
                     app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
@@ -403,9 +510,15 @@ void Gui(App* app)
         }
         ImGui::EndCombo();
     }
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, 15.0f));
+    if (ImGui::TreeNodeEx("root", ImGuiTreeNodeFlags_DefaultOpen, "GameObjects"))
+    {
+        ShowChildren(app);
+        ImGui::TreePop();
+    }
     
-    ImGui::ShowDemoWindow();
-
     if (ImGui::BeginPopup("OpenGL Info"))
     {
         ImGui::Text("Version %s", app->glInfo.glVersion.c_str());
@@ -421,6 +534,7 @@ void Gui(App* app)
 
         ImGui::EndPopup();
     }
+    ImGui::End();
 }
 
 void Update(App* app)
@@ -446,16 +560,18 @@ void Update(App* app)
         PushVec3(app->lightBuffer, light.direction);
         PushVec3(app->lightBuffer, light.position);
         PushData(app->lightBuffer, &light.intesity, sizeof(float));
+        int insda = 0;
+
     }
 
     app->globalParamsSize = app->lightBuffer.head - app->globalParamsOffset;
     UnmapBuffer(app->lightBuffer);
-    ///////////////////////////////////////////EndLights///////////////////////////////////////////
+    ///////////////////////////////////////////EndLights//////////////////////////////////////////
     ///////////////////////////////////////////Entities///////////////////////////////////////////
     MapBuffer(app->uniformBuffer, GL_WRITE_ONLY);
     for (Entity& entity : app->entities)
     {
-        entity.worldMatrix = entity.TransformPositionScale(vec3(2.5f, 1.5f, -2.0f), glm::vec3(0.45f));
+        entity.worldMatrix = entity.TransformPositionScale(entity.position, glm::vec3(1.0f));
         glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
                 
         AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
@@ -594,6 +710,7 @@ void Render(App* app)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, app->finalAttachment);
 
+        glUniform1i(glGetUniformLocation(frameBufferProgram.handle, "isDepth"), app->depth);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
@@ -603,4 +720,3 @@ void Render(App* app)
     default:;
     }
 }
-

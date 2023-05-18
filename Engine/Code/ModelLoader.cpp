@@ -168,7 +168,7 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Mesh* myMesh, u32 bas
     }
 }
 
-u32 LoadModel(App* app, const char* filename)
+u32 LoadModel(App* app, const char* filename, std::string name,glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
 {
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -193,6 +193,10 @@ u32 LoadModel(App* app, const char* filename)
     app->entities.push_back(Entity{});
     Entity& entity = app->entities.back();
     entity.modelIndex = meshIdx;
+    entity.name = name;
+    entity.position = position;
+    entity.rotation = rotation;
+    entity.scale    = scale;
     u32 modelIdx = (u32)app->entities.size() - 1u;
 
     String directory = GetDirectoryPart(MakeString(filename));

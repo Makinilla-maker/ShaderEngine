@@ -23,11 +23,25 @@ in vec2 vTexCoord;
 
 uniform sampler2D uTexture;
 
+uniform int isDepth;
+
 layout(location=0) out vec4 oColor;
+
+float LinearizeDepth(float depth)
+{
+	float z = depth * 2.0 - 1.0;
+	return (2.0 * 0.1 * 1000) / (1000.0 + 0.1 - z * (1000 - 0.1));
+}
 
 void main()
 {
-	oColor = texture(uTexture, vTexCoord);
+	if(isDepth == 1)
+	{
+		float depth = LinearizeDepth(texture(uTexture, vTexCoord).r)/ 1000.0;
+		oColor = vec4(vec3(depth),1);
+	}
+	else
+		oColor = texture(uTexture, vTexCoord);
 }
 
 #endif
