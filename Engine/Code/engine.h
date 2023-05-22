@@ -53,8 +53,8 @@ struct Program
 
 enum Mode
 {
-    Mode_TexturedQuad,
-    Mode_Count
+    FORWARD,
+    DEFERRED
 };
 
 struct VertexV2V3
@@ -119,6 +119,7 @@ struct App
     // program indices
     u32 texturedMeshProgramIdx; //Textures indefinides
     u32 frameBufferProgramIdx; 
+    u32 forwardBufferProgramIdx; 
     
     //GLuint bufferHandle;
 

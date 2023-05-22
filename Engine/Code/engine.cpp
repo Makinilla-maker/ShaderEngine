@@ -278,6 +278,7 @@ void Init(App* app)
 
     app->texturedMeshProgramIdx = LoadProgram(app, "geometryShaders.glsl", "TEXTURED_GEOMETRY");
     app->frameBufferProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+    app->forwardBufferProgramIdx = LoadProgram(app, "ForwardShader.glsl", "TEXTURED_GEOMETRY");
 
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
@@ -311,6 +312,22 @@ void Init(App* app)
 
         frameBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
     }
+
+
+    /////////
+
+    Program& forwardBufferProgram = app->programs[app->forwardBufferProgramIdx];
+    glGetProgramiv(forwardBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &forwardBufferProgram.lenght);
+
+    for (u32 i = 0; i < forwardBufferProgram.lenght; ++i)
+    {
+        glGetActiveAttrib(forwardBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(forwardBufferProgram.handle, name);
+
+        u8 test = sizeof(type);
+
+        forwardBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
     
     app->depth = 0;
 
@@ -331,7 +348,7 @@ void Init(App* app)
     app->selectedEntity = 0;
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
 
-    app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
+    //app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
 
     //app->modelPatrick = LoadModel(app,"Patrick/Plane.obj", std::string("Plane"), {0,0,0}, {0,0,0}, {1,1,1});
 
@@ -427,7 +444,7 @@ void Init(App* app)
     }
 
     app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
-    app->mode = Mode_TexturedQuad;
+    //app->mode = FORWARD;
 }
 void ShowChildren(App* app)
 {
@@ -519,6 +536,41 @@ void Gui(App* app)
     }
     ImGui::Dummy(ImVec2(0.0f, 15.0f));
     ImGui::Separator();
+
+    const char* itemsRender[] = { "FORWARD", "DEFERRED"};
+    static int itemsRender_current_idx = 0;
+    const char* combo_label_items = itemsRender[itemsRender_current_idx];
+
+    ImGui::Text("Render Type: ");
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    if (ImGui::BeginCombo("##Render Type", combo_label_items))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(itemsRender); n++)
+        {
+            const bool is_selected = (itemsRender_current_idx == n);
+            if (ImGui::Selectable(itemsRender[n], is_selected))
+            {
+                itemsRender_current_idx = n;
+                switch (n)
+                {
+                case 0:
+                    app->mode = FORWARD;
+                    break;
+                case 1:
+                    app->mode = DEFERRED;
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::Dummy(ImVec2(0.0f, 15.0f));
     if (ImGui::TreeNodeEx("root", ImGuiTreeNodeFlags_DefaultOpen, "GameObjects"))
     {
@@ -647,7 +699,7 @@ void Render(App* app)
 {
     switch (app->mode)
     {
-    case Mode_TexturedQuad:
+    case DEFERRED:
     {
         // TODO: Draw your textured quad here!
         // - clear the framebuffer
@@ -721,9 +773,47 @@ void Render(App* app)
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
+        //////
+
+        //glBindFr
+
     }
     break;
+    case FORWARD:
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        glClearColor(0.0, 0.0, 0.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+        Program& textureMeshProgram = app->programs[app->forwardBufferProgramIdx];
+        glUseProgram(textureMeshProgram.handle);
+
+        for (Entity entity : app->entities)
+        {
+            Mesh& mesh = app->meshes[entity.modelIndex];
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, textureMeshProgram);
+                glBindVertexArray(vao);
+
+                u32 submeshMaterialIdx = entity.materialIdx[i];
+                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+
+                glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);//wtf is that variable
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            }
+        }
+        break;
+    }
     default:;
     }
 }

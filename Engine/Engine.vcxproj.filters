@@ -124,5 +124,8 @@
     <None Include="WorkingDir\geometryShaders.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="WorkingDir\ForwardShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
