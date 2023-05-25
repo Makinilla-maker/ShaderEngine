@@ -84,6 +84,46 @@ public:
     GLuint frameBufferStatus = -1;
     GLuint normalAttachment = -1;
     GLuint positionAttachment = -1;
+
+    void bind()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+    }
+
+    void unbind()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    void checkStatus()
+    {
+        frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE)
+        {
+            switch (frameBufferStatus)
+            {
+            case GL_FRAMEBUFFER_UNDEFINED:                      ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+            case GL_FRAMEBUFFER_UNSUPPORTED:                    ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+            default: ELOG("Unknown framebuffer status error");
+            }
+        }
+    }
+};
+class WaterBuffer
+{
+public:
+    GLuint rtReflection = 0;
+    GLuint rtRefraction = 0;
+    GLuint rtReflectionDepth = 0;
+    GLuint rtRefractionDepth = 0;
+
+    FrameBuffer* fboReflection = nullptr;
+    FrameBuffer* fboRefraction = nullptr;
 };
 
 struct App
@@ -125,6 +165,7 @@ struct App
 
     Buffer uniformBuffer;
     Buffer lightBuffer;
+    WaterBuffer waterbuffer;
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
 

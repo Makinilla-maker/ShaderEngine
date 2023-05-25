@@ -364,6 +364,47 @@ void Init(App* app)
     Light PointLight = Light(LightType::POINT_LIGHT, { -6, 0, 1 }, { 0. ,0., 1. }, 10.0f, glm::normalize(glm::vec3(0, 0, 0)));
     //app->lights.emplace_back(lightdios1);
 
+    /////////////////////////////////////////water buffer//////////////////////////////
+    glGenTextures(1, &app->waterbuffer.rtReflection);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y,0,GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glGenTextures(1, &app->waterbuffer.rtRefraction);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefraction);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glGenTextures(1, &app->waterbuffer.rtRefractionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefractionDepth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
+
+    glGenTextures(1, &app->waterbuffer.rtReflectionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflectionDepth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
+
+    app->waterbuffer.fboReflection->bind();
+    glBindFramebuffer(GL_FRAMEBUFFER, &app->waterbuffer.fboReflection);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtReflection, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->waterbuffer.rtReflectionDepth, 0);
+
+
+
+    app->waterbuffer.fboReflection->unbind();
 
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 
