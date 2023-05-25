@@ -124,6 +124,8 @@ public:
 
     FrameBuffer* fboReflection = nullptr;
     FrameBuffer* fboRefraction = nullptr;
+
+    //Vertex
 };
 
 struct App
@@ -165,6 +167,7 @@ struct App
 
     Buffer uniformBuffer;
     Buffer lightBuffer;
+    Buffer waterBuffer;
     WaterBuffer waterbuffer;
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
