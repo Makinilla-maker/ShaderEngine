@@ -344,8 +344,6 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    app->waterBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
-
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
     app->selectedEntity = 0;
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
@@ -400,14 +398,17 @@ void Init(App* app)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
 
     glGenFramebuffers(1, &app->waterbuffer.fboReflection.frameBufferHandle);
-    app->waterbuffer.fboReflection->bind();
+    app->waterbuffer.fboReflection.bind();
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtReflection, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->waterbuffer.rtReflectionDepth, 0);
-    app->waterbuffer.fboReflection->unbind();
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtReflectionDepth, 0);
+    app->waterbuffer.fboReflection.unbind();
 
+    glGenFramebuffers(1, &app->waterbuffer.fboRefraction.frameBufferHandle);
+    app->waterbuffer.fboRefraction.bind();
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtRefraction, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtRefractionDepth, 0);
+    app->waterbuffer.fboRefraction.unbind();
 
-
-    app->waterbuffer.fboReflection->unbind();
 
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 

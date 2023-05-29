@@ -122,8 +122,8 @@ public:
     GLuint rtReflectionDepth = 0;
     GLuint rtRefractionDepth = 0;
 
-    FrameBuffer* fboReflection = nullptr;
-    FrameBuffer* fboRefraction = nullptr;
+    FrameBuffer fboReflection;
+    FrameBuffer fboRefraction;
 
     //Vertex
 };
@@ -167,7 +167,6 @@ struct App
 
     Buffer uniformBuffer;
     Buffer lightBuffer;
-    Buffer waterBuffer;
     WaterBuffer waterbuffer;
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
