@@ -279,6 +279,7 @@ void Init(App* app)
     app->texturedMeshProgramIdx = LoadProgram(app, "geometryShaders.glsl", "TEXTURED_GEOMETRY");
     app->frameBufferProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     app->forwardBufferProgramIdx = LoadProgram(app, "ForwardShader.glsl", "TEXTURED_GEOMETRY");
+    app->skyboxProgramIdx = LoadProgram(app, "skyboxShader.glsl", "TEXTURED_GEOMETRY");
 
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
@@ -345,12 +346,20 @@ void Init(App* app)
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
-    app->selectedEntity = 0;
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
+
+    app->boxFaces = {   "Enviroment Mapping/right.jpg", 
+                        "Enviroment Mapping/left.jpg", 
+                        "Enviroment Mapping/bottom.jpg", 
+                        "Enviroment Mapping/top.jpg", 
+                        "Enviroment Mapping/front.jpg", 
+                        "Enviroment Mapping/back.jpg" };
 
     //app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
 
     //app->modelPatrick = LoadModel(app,"Patrick/Plane.obj", std::string("Plane"), {0,0,0}, {0,0,0}, {1,1,1});
+
+    app->selectedEntity = 0;
 
     Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
     app->lights.emplace_back(lightdios);
@@ -489,7 +498,92 @@ void Init(App* app)
     }
 
     app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
-    //app->mode = FORWARD;
+
+    ///Envir Map
+    GLuint id;
+    glGenTextures(1,&id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    int width, height, components;
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        unsigned char* faceInfo = stbi_load(app->boxFaces[i].c_str(), &width, &height, &components, 0); //No se hasta que punto esto es unformacion de la imagen pero como tiene el width y el height
+        if (faceInfo)
+        {
+            stbi_set_flip_vertically_on_load(false);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,0,GL_RGB,GL_UNSIGNED_BYTE, faceInfo);
+            stbi_image_free(faceInfo);
+        }
+        else
+        {
+            ELOG("Cubemap tex failed to load at path: %s", faceInfo[i]);
+            stbi_image_free(faceInfo);
+        }
+    }
+    
+    app->skyBoxID = id;
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+    glGenVertexArrays(1, &app->skyboxVAO);
+    glGenBuffers(1, &app->skyboxVBO);
+    glBindVertexArray(app->skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, app->skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    //Unbinding
+    glBindVertexArray(0);
+
+    app->mode = DEFERRED;
 }
 void ShowChildren(App* app)
 {
@@ -583,7 +677,7 @@ void Gui(App* app)
     ImGui::Separator();
 
     const char* itemsRender[] = { "FORWARD", "DEFERRED"};
-    static int itemsRender_current_idx = 0;
+    static int itemsRender_current_idx = 1;
     const char* combo_label_items = itemsRender[itemsRender_current_idx];
 
     ImGui::Text("Render Type: ");
@@ -746,21 +840,17 @@ void Render(App* app)
     {
     case DEFERRED:
     {
-        // TODO: Draw your textured quad here!
-        // - clear the framebuffer
-        // - set the viewport
-        // - set the blending state
-        // - bind the texture into unit 0
-        // - bind the program 
-        //   (...and make its texture sample from unit 0)
-        // - bind the vao
-        // - glDrawElements() !!!
+        /////////////Skybox///////
+        
+
+        glBindVertexArray(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
         GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         glDrawBuffers(3, drawBuffers);
@@ -804,7 +894,7 @@ void Render(App* app)
         Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
         glUseProgram(frameBufferProgram.handle);
 
-        glClearColor(0.1, 0.1, 0.1, 1.0);
+        //glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(app->vao);
@@ -822,13 +912,17 @@ void Render(App* app)
 
         //glBindFr
 
+        SkyboxRender(app);
+
+
     }
     break;
     case FORWARD:
     {
+        SkyboxRender(app);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        glClearColor(0.0, 0.0, 0.0, 1.0);
+        //glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -861,4 +955,25 @@ void Render(App* app)
     }
     default:;
     }
+}
+
+void SkyboxRender(App* app)
+{
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
+
+    Program& programCubemap = app->programs[app->skyboxProgramIdx];
+    glUseProgram(programCubemap.handle);
+
+    glm::mat4 view = glm::mat4(glm::mat3(app->camera.view));
+    glBindVertexArray(app->skyboxVAO);
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &app->camera.projection[0][0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->skyBoxID);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
 }

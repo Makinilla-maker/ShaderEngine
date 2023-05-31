@@ -162,14 +162,27 @@ struct App
     u32 texturedMeshProgramIdx; //Textures indefinides
     u32 frameBufferProgramIdx; 
     u32 forwardBufferProgramIdx; 
+    u32 skyboxProgramIdx;
     
     //GLuint bufferHandle;
 
     Buffer uniformBuffer;
     Buffer lightBuffer;
-    WaterBuffer waterbuffer;
     GLint maxUniformBufferSize = 0;
     GLint uniformBlockAlignment;
+    
+    //Water
+    WaterBuffer waterbuffer;
+
+
+    //Environment Mapping
+
+    GLuint skyBoxID;
+    std::vector<std::string> boxFaces;
+    GLuint skyboxVAO; 
+    GLuint skyboxVBO = 0;
+    GLint cubmapWVP;
+
 
     GLuint finalAttachment;
     u32 modelPatrick;
@@ -206,4 +219,5 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+void SkyboxRender(App* app);
 
