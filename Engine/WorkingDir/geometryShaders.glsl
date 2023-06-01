@@ -5,7 +5,7 @@
 
 struct Light
 {
-    unsigned int type;
+    uint type;
     vec3 color;
     vec3 direction;
     vec3 position;
@@ -25,7 +25,7 @@ layout(location=4) in vec3 aBitangent;
 layout(binding = 0, std140) uniform GlobalParams
 {
     vec3 uCameraPosition;
-    unsigned int uLightCount;
+    uint uLightCount;
     Light uLight[16];
 };
 
@@ -72,7 +72,7 @@ uniform sampler2D uTexture;
 layout(binding = 0, std140) uniform GlobalParams
 {
     vec3 uCameraPosition;
-    unsigned int uLightCount;
+    uint uLightCount;
     Light uLight[16];
 };
 
