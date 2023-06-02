@@ -242,6 +242,47 @@ bool DrawVec3(const char* name, glm::vec3& vec)
     else return false;
 }
 
+void ReadyProgramAttributes(Program& program)
+{
+    GLsizei length;
+    GLint size;
+    GLenum type;
+    GLchar name[128];
+
+    for (u32 i = 0; i < program.lenght; ++i)
+    {
+        glGetActiveAttrib(program.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(program.handle, name);
+
+        u8 test = sizeof(type);
+
+        program.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
+}
+void ReadyTexture2D(App* app, GLuint* i, int m_a, int m_b, int m_c)
+{
+    glGenTextures(1, i);
+    glBindTexture(GL_TEXTURE_2D, *i);
+    glTexImage2D(GL_TEXTURE_2D, 0, m_a, app->displaySize.x, app->displaySize.y, 0, m_b, m_c, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+void ReadyTextureWaterBuffer(App* app, GLuint* i, int m_t, int m_v)
+{
+    glGenTextures(1, i);
+    glBindTexture(GL_TEXTURE_2D, *i);
+    glTexImage2D(GL_TEXTURE_2D, 0, m_t, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, m_v, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void Init(App* app)
 {
     // TODO: Initialize your resources here!
@@ -284,86 +325,24 @@ void Init(App* app)
 
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
-
-    
-    GLsizei length;
-    GLint size;
-    GLenum type;
-    GLchar name[128];
-
-    for (u32 i = 0; i < textureMeshProgram.lenght; ++i)
-    {
-        glGetActiveAttrib(textureMeshProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
-        GLuint attributeLocation = glGetAttribLocation(textureMeshProgram.handle, name);
-
-        u8 test = sizeof(type);
-
-        textureMeshProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
-    }
-    //////
+    ReadyProgramAttributes(textureMeshProgram);
 
     Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
     glGetProgramiv(frameBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &frameBufferProgram.lenght);
-
-    for (u32 i = 0; i < frameBufferProgram.lenght; ++i)
-    {
-        glGetActiveAttrib(frameBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
-        GLuint attributeLocation = glGetAttribLocation(frameBufferProgram.handle, name);
-
-        u8 test = sizeof(type);
-
-        frameBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
-    }
-
-
-    /////////
+    ReadyProgramAttributes(frameBufferProgram);
 
     Program& forwardBufferProgram = app->programs[app->forwardBufferProgramIdx];
     glGetProgramiv(forwardBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &forwardBufferProgram.lenght);
-
-    for (u32 i = 0; i < forwardBufferProgram.lenght; ++i)
-    {
-        glGetActiveAttrib(forwardBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
-        GLuint attributeLocation = glGetAttribLocation(forwardBufferProgram.handle, name);
-
-        u8 test = sizeof(type);
-
-        forwardBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
-    }
-
-    ////////////////skybox
-
+    ReadyProgramAttributes(forwardBufferProgram);
 
     Program& skyBoxBufferProgram = app->programs[app->skyboxProgramIdx];
     glGetProgramiv(skyBoxBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &skyBoxBufferProgram.lenght);
-
-    for (u32 i = 0; i < skyBoxBufferProgram.lenght; ++i)
-    {
-        glGetActiveAttrib(skyBoxBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
-        GLuint attributeLocation = glGetAttribLocation(skyBoxBufferProgram.handle, name);
-
-        u8 test = sizeof(type);
-
-        skyBoxBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
-    }
-
-    ////////////////water
-
+    ReadyProgramAttributes(skyBoxBufferProgram);
 
     Program& waterBufferProgram = app->programs[app->waterProgramIdx];
     glGetProgramiv(waterBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &waterBufferProgram.lenght);
+    ReadyProgramAttributes(waterBufferProgram);
 
-    for (u32 i = 0; i < waterBufferProgram.lenght; ++i)
-    {
-        glGetActiveAttrib(waterBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
-        GLuint attributeLocation = glGetAttribLocation(waterBufferProgram.handle, name);
-
-        u8 test = sizeof(type);
-
-        waterBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
-    }
-
-    
     app->depth = 0;
 
 
@@ -379,9 +358,9 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
+    //app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
     app->waterID = LoadTexture2D(app, "Water/dudvmap.png");
-    app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
+    //app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
     app->modelPatrick1 = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
     
@@ -412,45 +391,10 @@ void Init(App* app)
 
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 
-    glGenTextures(1, &app->frameBuffer.colorAttachmentHandle);
-    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.colorAttachmentHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->frameBuffer.normalAttachment);
-    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.normalAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->frameBuffer.positionAttachment);
-    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.positionAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->frameBuffer.depthAttachmentHandle);
-    glBindTexture(GL_TEXTURE_2D, app->frameBuffer.depthAttachmentHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    ReadyTexture2D(app, &app->frameBuffer.colorAttachmentHandle, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+    ReadyTexture2D(app, &app->frameBuffer.normalAttachment, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+    ReadyTexture2D(app, &app->frameBuffer.positionAttachment, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+    ReadyTexture2D(app, &app->frameBuffer.depthAttachmentHandle, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
 
     glGenFramebuffers(1, &app->frameBuffer.frameBufferHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
@@ -480,41 +424,10 @@ void Init(App* app)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     /////////////////////////////////////////water buffer//////////////////////////////
-    glGenTextures(1, &app->waterbuffer.rtReflection);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->waterbuffer.rtRefraction);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefraction);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->waterbuffer.rtRefractionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefractionDepth);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->waterbuffer.rtReflectionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflectionDepth);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    ReadyTextureWaterBuffer(app, &app->waterbuffer.rtReflection, GL_RGBA8, GL_UNSIGNED_BYTE);
+    ReadyTextureWaterBuffer(app, &app->waterbuffer.rtRefraction, GL_RGBA8, GL_UNSIGNED_BYTE);
+    ReadyTextureWaterBuffer(app, &app->waterbuffer.rtRefractionDepth, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT);
+    ReadyTextureWaterBuffer(app, &app->waterbuffer.rtReflectionDepth, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT);
 
     glGenFramebuffers(1, &app->waterbuffer.fboReflection.frameBufferHandle);
     app->waterbuffer.fboReflection.bind();
@@ -940,7 +853,7 @@ void Render(App* app)
         }
         
         SkyboxRender(app);
-        WaterRender(app);
+        //WaterRender(app);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1023,8 +936,8 @@ void SkyboxRender(App* app)
 
     glm::mat4 view = glm::mat4(glm::mat3(app->camera.view));
     glBindVertexArray(app->skyboxVAO);
-    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &app->camera.projection[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
+    //glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &app->camera.projection[0][0]);
+    //glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->skyBoxID);
 
