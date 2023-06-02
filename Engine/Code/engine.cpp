@@ -348,12 +348,12 @@ void Init(App* app)
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
 
-    app->boxFaces = {   "Enviroment Mapping/right.jpg", 
-                        "Enviroment Mapping/left.jpg", 
-                        "Enviroment Mapping/bottom.jpg", 
-                        "Enviroment Mapping/top.jpg", 
-                        "Enviroment Mapping/front.jpg", 
-                        "Enviroment Mapping/back.jpg" };
+    app->boxFaces = {   "EnviromentMapping/right.jpg", 
+                        "EnviromentMapping/left.jpg", 
+                        "EnviromentMapping/bottom.jpg", 
+                        "EnviromentMapping/top.jpg", 
+                        "EnviromentMapping/front.jpg", 
+                        "EnviromentMapping/back.jpg" };
 
     //app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
 
@@ -580,6 +580,8 @@ void Init(App* app)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     //Unbinding
     glBindVertexArray(0);
 
@@ -783,7 +785,6 @@ void Update(App* app)
 
         entity.localParamSize = app->uniformBuffer.head - entity.localParamsOffset;
 
-        int ligma = 0;
     }
     ///////////////////////////////////////////EndEntities///////////////////////////////////////////
     UnmapBuffer(app->uniformBuffer);
@@ -841,8 +842,8 @@ void Render(App* app)
     case DEFERRED:
     {
         /////////////Skybox///////
+        SkyboxRender(app);
         
-
         glBindVertexArray(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
@@ -850,7 +851,7 @@ void Render(App* app)
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        
 
         GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         glDrawBuffers(3, drawBuffers);
@@ -887,6 +888,7 @@ void Render(App* app)
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
         }
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //////FrameBuffer
@@ -911,9 +913,6 @@ void Render(App* app)
         //////
 
         //glBindFr
-
-        SkyboxRender(app);
-
 
     }
     break;
@@ -959,21 +958,23 @@ void Render(App* app)
 
 void SkyboxRender(App* app)
 {
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
+    //glDepthMask(GL_FALSE);
+    //glDepthFunc(GL_LEQUAL);
 
     Program& programCubemap = app->programs[app->skyboxProgramIdx];
     glUseProgram(programCubemap.handle);
 
     glm::mat4 view = glm::mat4(glm::mat3(app->camera.view));
     glBindVertexArray(app->skyboxVAO);
-    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &app->camera.projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->skyBoxID);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
+
+
+    //glDepthFunc(GL_LESS);
+    //glDepthMask(GL_TRUE);
 }
