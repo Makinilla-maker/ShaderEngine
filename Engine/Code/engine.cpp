@@ -358,9 +358,9 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
+    //app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
     app->waterID = LoadTexture2D(app, "Water/dudvmap.png");
-    app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
+    //app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
     app->modelPatrick1 = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
     

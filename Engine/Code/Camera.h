@@ -34,9 +34,6 @@ public:
 	glm::vec3 cameraRight;
 	glm::vec3 cameraForward;
 
-	float yaw = -90.0f;
-	float pitch = 0.0f;
-
 	float movementSpeed = 0.5f;
 
 	glm::vec3 cameraTarget;
@@ -44,7 +41,6 @@ public:
 
 	glm::mat4 view;
 
-	
 
 private:
 
