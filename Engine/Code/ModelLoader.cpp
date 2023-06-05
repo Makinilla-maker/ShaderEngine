@@ -254,6 +254,14 @@ u32 LoadModel(App* app, const char* filename, std::string name,glm::vec3 positio
 
     return modelIdx;
 }
+Entity Entity::GetModelFromName(std::string name, App* app)
+{
+    for (Entity entity : app->entities)
+    {
+        if (entity.name == name)
+            return entity;
+    }
+}
 glm::mat4 Entity::TransformScale(const glm::vec3& scaleFactors)
 {
     glm::mat4 transform = glm::scale(scaleFactors);

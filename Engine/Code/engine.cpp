@@ -280,6 +280,7 @@ void Init(App* app)
     app->frameBufferProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     app->forwardBufferProgramIdx = LoadProgram(app, "ForwardShader.glsl", "TEXTURED_GEOMETRY");
     app->skyboxProgramIdx = LoadProgram(app, "skyboxShader.glsl", "TEXTURED_GEOMETRY");
+    app->waterProgramIdx = LoadProgram(app, "waterShader.glsl", "TEXTURED_GEOMETRY");
 
     Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
     glGetProgramiv(textureMeshProgram.handle, GL_ACTIVE_ATTRIBUTES, &textureMeshProgram.lenght);
@@ -329,6 +330,39 @@ void Init(App* app)
 
         forwardBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
     }
+
+    ////////////////skybox
+
+
+    Program& skyBoxBufferProgram = app->programs[app->skyboxProgramIdx];
+    glGetProgramiv(skyBoxBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &skyBoxBufferProgram.lenght);
+
+    for (u32 i = 0; i < skyBoxBufferProgram.lenght; ++i)
+    {
+        glGetActiveAttrib(skyBoxBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(skyBoxBufferProgram.handle, name);
+
+        u8 test = sizeof(type);
+
+        skyBoxBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
+
+    ////////////////water
+
+
+    Program& waterBufferProgram = app->programs[app->waterProgramIdx];
+    glGetProgramiv(waterBufferProgram.handle, GL_ACTIVE_ATTRIBUTES, &waterBufferProgram.lenght);
+
+    for (u32 i = 0; i < waterBufferProgram.lenght; ++i)
+    {
+        glGetActiveAttrib(waterBufferProgram.handle, i, ARRAY_COUNT(name), &length, &size, &type, name);
+        GLuint attributeLocation = glGetAttribLocation(waterBufferProgram.handle, name);
+
+        u8 test = sizeof(type);
+
+        waterBufferProgram.vertexInputLayout.attributes.push_back({ (u8)attributeLocation, (u8)size });
+    }
+
     
     app->depth = 0;
 
@@ -345,8 +379,12 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
+    app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
+    app->waterID = LoadTexture2D(app, "Water/dudvmap.png");
+    app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
-    app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
+    app->modelPatrick1 = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
+    
 
     app->boxFaces = {   "EnviromentMapping/right.jpg", 
                         "EnviromentMapping/left.jpg", 
@@ -355,9 +393,8 @@ void Init(App* app)
                         "EnviromentMapping/front.jpg", 
                         "EnviromentMapping/back.jpg" };
 
-    //app->modelPatrick = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
 
-    //app->modelPatrick = LoadModel(app,"Patrick/Plane.obj", std::string("Plane"), {0,0,0}, {0,0,0}, {1,1,1});
+    //app->modelPatrick2 = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
 
     app->selectedEntity = 0;
 
@@ -372,52 +409,6 @@ void Init(App* app)
 
     Light PointLight = Light(LightType::POINT_LIGHT, { -6, 0, 1 }, { 0. ,0., 1. }, 10.0f, glm::normalize(glm::vec3(0, 0, 0)));
     //app->lights.emplace_back(lightdios1);
-
-    /////////////////////////////////////////water buffer//////////////////////////////
-    glGenTextures(1, &app->waterbuffer.rtReflection);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y,0,GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-    glGenTextures(1, &app->waterbuffer.rtRefraction);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefraction);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-    glGenTextures(1, &app->waterbuffer.rtRefractionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefractionDepth);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
-
-    glGenTextures(1, &app->waterbuffer.rtReflectionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflectionDepth);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
-
-    glGenFramebuffers(1, &app->waterbuffer.fboReflection.frameBufferHandle);
-    app->waterbuffer.fboReflection.bind();
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtReflection, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtReflectionDepth, 0);
-    app->waterbuffer.fboReflection.unbind();
-
-    glGenFramebuffers(1, &app->waterbuffer.fboRefraction.frameBufferHandle);
-    app->waterbuffer.fboRefraction.bind();
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtRefraction, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtRefractionDepth, 0);
-    app->waterbuffer.fboRefraction.unbind();
-
 
     ///////////////////////////////////////////FrameBuffer///////////////////////////////////////////
 
@@ -488,7 +479,62 @@ void Init(App* app)
     glDrawBuffers(1, &app->frameBuffer.colorAttachmentHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    ///////////////////////////////////////////EndFrameBuffer///////////////////////////////////////////
+    /////////////////////////////////////////water buffer//////////////////////////////
+    glGenTextures(1, &app->waterbuffer.rtReflection);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->waterbuffer.rtRefraction);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefraction);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->waterbuffer.rtRefractionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefractionDepth);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->waterbuffer.rtReflectionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflectionDepth);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_DEPTH_COMPONENT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &app->waterbuffer.fboReflection.frameBufferHandle);
+    app->waterbuffer.fboReflection.bind();
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtReflection, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtReflectionDepth, 0);
+
+
+    GLuint drawReflections[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(ARRAY_COUNT(drawReflections), drawReflections);
+
+    app->waterbuffer.fboReflection.unbind();
+
+    glGenFramebuffers(1, &app->waterbuffer.fboRefraction.frameBufferHandle);
+    app->waterbuffer.fboRefraction.bind();
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->waterbuffer.rtRefraction, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->waterbuffer.rtRefractionDepth, 0);
+    GLuint drawRefractions[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(ARRAY_COUNT(drawRefractions), drawRefractions);
+    app->waterbuffer.fboRefraction.unbind();
+
 
     GLint numExtensions = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
@@ -499,20 +545,16 @@ void Init(App* app)
 
     app->finalAttachment = app->frameBuffer.colorAttachmentHandle;
 
-    ///Envir Map
+    ///////////////////////////////////////////Envir Map///////////////////////////////////////////
+
     GLuint id;
     glGenTextures(1,&id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     int width, height, components;
     for (unsigned int i = 0; i < 6; ++i)
     {
-        unsigned char* faceInfo = stbi_load(app->boxFaces[i].c_str(), &width, &height, &components, 0); //No se hasta que punto esto es unformacion de la imagen pero como tiene el width y el height
+        unsigned char* faceInfo = stbi_load(app->boxFaces[i].c_str(), &width, &height, &components, 0); //No se hasta que punto esto es informacion de la imagen pero como tiene el width y el height
         if (faceInfo)
         {
             stbi_set_flip_vertically_on_load(false);
@@ -526,6 +568,12 @@ void Init(App* app)
         }
     }
     
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
     app->skyBoxID = id;
 
     float skyboxVertices[] = {
@@ -580,7 +628,7 @@ void Init(App* app)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     //Unbinding
     glBindVertexArray(0);
@@ -772,6 +820,7 @@ void Update(App* app)
     for (Entity& entity : app->entities)
     {
         entity.worldMatrix = entity.TransformPositionScale(entity.position, glm::vec3(1.0f));
+        entity.worldMatrixProjection = app->camera.projection * app->camera.view * glm::translate(entity.worldMatrix, vec3(0, 0, 0));
         glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBuffer.handle);
                 
         AlignHead(app->uniformBuffer, app->uniformBlockAlignment);
@@ -779,7 +828,7 @@ void Update(App* app)
         entity.localParamsOffset = app->uniformBuffer.head;
 
         glm::mat4 trans = entity.worldMatrix;
-        trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+        trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
         PushMat4(app->uniformBuffer, trans);
         PushMat4(app->uniformBuffer, app->camera.projection * app->camera.view * trans);
 
@@ -789,6 +838,8 @@ void Update(App* app)
     ///////////////////////////////////////////EndEntities///////////////////////////////////////////
     UnmapBuffer(app->uniformBuffer);
 
+    app->waterbuffer.move += 0.005 * app->deltaTime;
+    app->waterbuffer.move = fmod(app->waterbuffer.move, 1);
     
 }
 
@@ -842,8 +893,7 @@ void Render(App* app)
     case DEFERRED:
     {
         /////////////Skybox///////
-        SkyboxRender(app);
-        
+                
         glBindVertexArray(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
@@ -888,6 +938,9 @@ void Render(App* app)
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
         }
+        
+        SkyboxRender(app);
+        WaterRender(app);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -896,7 +949,7 @@ void Render(App* app)
         Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
         glUseProgram(frameBufferProgram.handle);
 
-        //glClearColor(0.1, 0.1, 0.1, 1.0);
+        glClearColor(1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(app->vao);
@@ -920,6 +973,8 @@ void Render(App* app)
     {
         SkyboxRender(app);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
+        glEnable(GL_DEPTH_TEST);
 
         //glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -944,7 +999,9 @@ void Render(App* app)
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
 
-                glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);//wtf is that variable
+                glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
+                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(app->camera.view));
+                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1, GL_FALSE, glm::value_ptr(app->camera.projection));
 
                 Submesh& submesh = mesh.submeshes[i];
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
@@ -974,7 +1031,52 @@ void SkyboxRender(App* app)
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
-
     //glDepthFunc(GL_LESS);
     //glDepthMask(GL_TRUE);
+}
+
+void WaterRender(App* app)
+{
+    Program& programWater = app->programs[app->waterProgramIdx];
+    glUseProgram(programWater.handle);
+
+    auto enityWater = app->waterPlane;
+
+    Mesh& mesh = app->meshes[app->entities[enityWater].modelIndex];
+    GLuint vao = FindVAO(mesh, 0, programWater);
+
+    glm::mat4 model = app->entities[enityWater].worldMatrix;
+    glm::mat4 view = app->camera.view * model;
+
+    glBindVertexArray(vao);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "projectionMatrix"), 1, GL_FALSE, &app->camera.projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "worldViewMatrix"), 1, GL_FALSE, &view[0][0]);
+    
+    glUniform2f(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "viewportSize"), app->displaySize.x, app->displaySize.y);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "modelViewMatrix"), 1, GL_FALSE, &app->entities[enityWater].worldMatrixProjection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "modelViewMatrix"), 1, GL_FALSE, &app->entities[enityWater].worldMatrixProjection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "viewMatrixInv"), 1, GL_FALSE, &app->entities[enityWater].worldMatrixProjection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "viewMatrixInv"), 1, GL_FALSE, &glm::inverse(view)[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "projectionMatrixInv"), 1, GL_FALSE, &glm::inverse(app->camera.projection)[0][0]);
+
+    /*glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), 0);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), 1);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 2);*/ 
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), app->waterbuffer.rtReflection);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), app->waterbuffer.rtRefraction);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionDepth"), app->waterbuffer.rtReflectionDepth);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionDepth"), app->waterbuffer.rtRefractionDepth);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtRefraction);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, app->textures[app->waterID].handle);
+
+    glDrawElements(GL_TRIANGLES, mesh.submeshes[0].indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    glUseProgram(0);
 }

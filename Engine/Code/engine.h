@@ -117,6 +117,9 @@ public:
 class WaterBuffer
 {
 public:
+
+    float move = 0;
+
     GLuint rtReflection = 0;
     GLuint rtRefraction = 0;
     GLuint rtReflectionDepth = 0;
@@ -173,6 +176,8 @@ struct App
     
     //Water
     WaterBuffer waterbuffer;
+    u32 waterProgramIdx;
+    u32 waterID;
 
 
     //Environment Mapping
@@ -188,6 +193,8 @@ struct App
     u32 modelPatrick;
     u32 modelPatrick1;
     u32 modelPatrick2;
+    u32 waterPlane;
+
     u8 texturedMeshProgram_uTexture;
 
     // Mode
@@ -219,5 +226,7 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+
 void SkyboxRender(App* app);
+void WaterRender(App* app);
 

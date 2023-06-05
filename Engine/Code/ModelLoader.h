@@ -47,6 +47,7 @@ public:
 	glm::vec3 rotation;
 	glm::vec3 scale;
 	glm::mat4 worldMatrix;
+	glm::mat4 worldMatrixProjection;
 
 	u32 modelIndex;
 	u32 localParamsOffset;
@@ -55,6 +56,8 @@ public:
 
 	glm::mat4 TransformScale(const glm::vec3& scaleFactors);
 	glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors);
+
+	Entity GetModelFromName(std::string name, App* app);
 };
 
 enum LightType

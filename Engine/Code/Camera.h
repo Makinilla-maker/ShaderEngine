@@ -20,7 +20,7 @@ public:
 	Camera();
 	~Camera();
 	void Update(glm::vec2 displaySize, App* app);
-	void RecalculateCamera();
+	void RecalculateCamera(glm::vec2 displaySize);
 	
 	float aspectRatio;
 

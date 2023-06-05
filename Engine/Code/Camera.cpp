@@ -14,14 +14,18 @@ Camera::Camera()
 	//Camera Position
 	cameraPos = glm::vec3(-10.0f, 5.0f, -0.0f);
 	//Camera Direction
-	cameraTarget = glm::vec3(0.0f, 2.0f, 0.0f);
+	cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 	cameraDirection = glm::normalize(cameraPos - cameraTarget);
 	//Up axis' camera
 	cameraUp = glm::vec3(0,1,0);
-	//Right axis' camera
-	cameraRight = glm::normalize(glm::cross({ 0,1,0 }, cameraDirection));
+	
+	//cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
+	cameraRight = glm::normalize(glm::cross({ 0,1,0 },cameraDirection));
+	cameraForward = glm::normalize(glm::cross({ 0,1,0 }, cameraRight));
 
-	cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
+	cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
+	//Right axis' camera
+
 	view = glm::mat4(1);
 }
 
@@ -30,7 +34,6 @@ Camera::~Camera()
 }
 void Camera::Update(glm::vec2 displaySize, App* app)
 {
-	
 	if (app->input.mouseButtons[MouseButton::RIGHT] == BUTTON_PRESSED)
 	{
 		float speed = 20.0f;
@@ -51,15 +54,20 @@ void Camera::Update(glm::vec2 displaySize, App* app)
 		{
 			cameraPos += cameraRight * app->deltaTime * speed;
 		}
+		if (app->input.keys[Key::K_Q] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos += cameraUp * app->deltaTime * speed;
+		}
+		if (app->input.keys[Key::K_E] == ButtonState::BUTTON_PRESSED)
+		{
+			cameraPos -= cameraUp * app->deltaTime * speed;
+		}
 	}
 
-	aspectRatio = (float)displaySize.x / (float)displaySize.y;
-	
-	projection = glm::perspective(glm::radians(60.0f), aspectRatio, zNear, zFar);
 
-	RecalculateCamera();
+	RecalculateCamera(displaySize);
 }
-void Camera::RecalculateCamera()
+void Camera::RecalculateCamera(glm::vec2 displaySize)
 {
 	cameraDirection = glm::normalize(cameraPos - cameraTarget);
 	cameraRight = glm::normalize(glm::cross({ 0,1,0 }, cameraDirection));
@@ -67,7 +75,8 @@ void Camera::RecalculateCamera()
 	cameraUp = glm::cross(cameraDirection, cameraRight);
 	cameraForward = glm::normalize(glm::cross(cameraUp, cameraRight));
 
-	view = glm::lookAt(cameraPos,cameraTarget,cameraUp);
-
+	aspectRatio = (float)displaySize.x / (float)displaySize.y;
+	projection = glm::perspective(glm::radians(60.0f), aspectRatio, zNear, zFar);
+	view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
 }
 
