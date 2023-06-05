@@ -906,7 +906,7 @@ void Render(App* app)
         GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         glDrawBuffers(3, drawBuffers);
 
-        glClearColor(0.1, 0.1, 0.1, 1.0);
+        //glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -949,7 +949,7 @@ void Render(App* app)
         Program& frameBufferProgram = app->programs[app->frameBufferProgramIdx];
         glUseProgram(frameBufferProgram.handle);
 
-        glClearColor(1, 0.1, 0.1, 1.0);
+        //glClearColor(1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(app->vao);
@@ -1062,11 +1062,11 @@ void WaterRender(App* app)
     /*glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), 0);
     glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), 1);
     glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 2);*/ 
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), app->waterbuffer.rtReflection);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), app->waterbuffer.rtRefraction);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionDepth"), app->waterbuffer.rtReflectionDepth);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionDepth"), app->waterbuffer.rtRefractionDepth);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 0);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), 0);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), 1);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionDepth"), 2);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionDepth"), 3);
+    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 4);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, app->waterbuffer.rtReflection);
