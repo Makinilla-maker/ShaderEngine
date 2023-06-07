@@ -358,9 +358,9 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    //app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
+    app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
     app->waterID = LoadTexture2D(app, "Water/dudvmap.png");
-    //app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
+    app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
     app->modelPatrick1 = LoadModel(app,"Patrick/Patrick.obj", std::string("Patri"), {1,1,1}, {0,0,0}, {1,1,1});
     
@@ -460,32 +460,32 @@ void Init(App* app)
 
     ///////////////////////////////////////////Envir Map///////////////////////////////////////////
 
-    GLuint id;
-    glGenTextures(1,&id);
+    unsigned int id;
+    glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-    int width, height, components;
-    for (unsigned int i = 0; i < 6; ++i)
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < app->boxFaces.size(); i++)
     {
-        unsigned char* faceInfo = stbi_load(app->boxFaces[i].c_str(), &width, &height, &components, 0); //No se hasta que punto esto es informacion de la imagen pero como tiene el width y el height
-        if (faceInfo)
+        unsigned char* data = stbi_load(app->boxFaces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
         {
-            stbi_set_flip_vertically_on_load(false);
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,0,GL_RGB,GL_UNSIGNED_BYTE, faceInfo);
-            stbi_image_free(faceInfo);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
         }
         else
         {
-            ELOG("Cubemap tex failed to load at path: %s", faceInfo[i]);
-            stbi_image_free(faceInfo);
+            stbi_image_free(data);
         }
     }
-    
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+       
 
     app->skyBoxID = id;
 
@@ -822,7 +822,6 @@ void Render(App* app)
         //glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
         Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(textureMeshProgram.handle);
 
@@ -853,7 +852,7 @@ void Render(App* app)
         }
         
         SkyboxRender(app);
-        //WaterRender(app);
+        WaterRender(app);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -884,12 +883,10 @@ void Render(App* app)
     break;
     case FORWARD:
     {
-        SkyboxRender(app);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         glEnable(GL_DEPTH_TEST);
 
-        //glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -920,6 +917,7 @@ void Render(App* app)
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
         }
+        SkyboxRender(app);
         break;
     }
     default:;
@@ -928,24 +926,24 @@ void Render(App* app)
 
 void SkyboxRender(App* app)
 {
-    //glDepthMask(GL_FALSE);
-    //glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LEQUAL);
 
     Program& programCubemap = app->programs[app->skyboxProgramIdx];
     glUseProgram(programCubemap.handle);
 
     glm::mat4 view = glm::mat4(glm::mat3(app->camera.view));
+
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &app->camera.projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &view[0][0]);
+    
     glBindVertexArray(app->skyboxVAO);
-    //glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &app->camera.projection[0][0]);
-    //glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &view[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->skyBoxID);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
-    //glDepthFunc(GL_LESS);
-    //glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void WaterRender(App* app)
@@ -972,9 +970,6 @@ void WaterRender(App* app)
     glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "viewMatrixInv"), 1, GL_FALSE, &glm::inverse(view)[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "projectionMatrixInv"), 1, GL_FALSE, &glm::inverse(app->camera.projection)[0][0]);
 
-    /*glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), 0);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), 1);
-    glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "dudvMap"), 2);*/ 
     glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionMap"), 0);
     glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "refractionMap"), 1);
     glUniform1i(glGetUniformLocation(app->programs[app->waterProgramIdx].handle, "reflectionDepth"), 2);
