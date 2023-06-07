@@ -1,5 +1,5 @@
 <h2><img src="https://emojis.slackmojis.com/emojis/images/1531849430/4246/blob-sunglasses.gif?1531849430" width="30"/> PGA🙏🏻, Advanced Graphics Programing <img src="https://media.giphy.com/media/12oufCB0MyZ1Go/giphy.gif" width="50"></h2>
-<img align='right' src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" width="230">
+<img align='right' src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" width="30">
 <p><em>Undergraduate Students at <a href="https://www.citm.upc.edu/">CITM
 </a><img src="https://seeklogo.com/images/U/UPC-logo-2C0458B6A3-seeklogo.com.jpg" width="30"> 
 </em></p>
