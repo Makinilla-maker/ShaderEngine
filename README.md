@@ -12,7 +12,7 @@ WSAD moves forward, backwards and sideways
 MouseLEFT pivot camera rotation
 QE moves up and down
 ```
-**👆 This can be tried out at [our release](linkr)**
+**👆 This can be tried out at [our release](https://github.com/Makinilla-maker/ShaderEngine/releases/tag/Deliver3)**
 
 **Features:**
 Our custom engine offers a minimal approach to 3d rendering.
