@@ -15,6 +15,7 @@ Camera::Camera()
 	cameraPos = glm::vec3(-10.0f, 5.0f, -0.0f);
 	//Camera Direction
 	cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	cameraTarget2 = glm::vec3(0.0f, 0.0f, 0.0f);
 	cameraDirection = glm::normalize(cameraPos - cameraTarget);
 	//Up axis' camera
 	cameraUp = glm::vec3(0,1,0);
@@ -43,11 +44,11 @@ void Camera::Update(glm::vec2 displaySize, App* app)
 		if (app->input.keys[Key::K_A] == ButtonState::BUTTON_PRESSED)
 		{
 			//??why rotate
-			cameraPos += cameraRight * app->deltaTime * speed;
+			cameraPos -= cameraRight * app->deltaTime * speed;
 		}
 		if (app->input.keys[Key::K_D] == ButtonState::BUTTON_PRESSED)
 		{
-			cameraPos -= cameraRight * app->deltaTime * speed;
+			cameraPos += cameraRight * app->deltaTime * speed;
 		}
 		
 		if (app->input.keys[Key::K_Q] == ButtonState::BUTTON_PRESSED) cameraPos += cameraUp * app->deltaTime * speed;
@@ -60,17 +61,17 @@ void Camera::Update(glm::vec2 displaySize, App* app)
 		glm::vec3 up = glm::normalize(glm::cross(right, cameraTarget - cameraPos));
 		right = cameraRight;
 		up = cameraUp;
-		cameraPos -= right * app->input.mouseDelta.x * panSpeed;
-		cameraPos += up * app->input.mouseDelta.y * panSpeed;
-		cameraTarget = cameraPos + glm::normalize(cameraTarget - cameraPos);
+		cameraPos -= right * app->input.mouseDelta.x * panSpeed * 5.f;
+		cameraPos += up * app->input.mouseDelta.y * panSpeed * 5.f;
+		//cameraTarget = cameraPos + glm::normalize(cameraForward - cameraPos);
 	}
-	if (app->input.mouseButtons[MouseButton::RIGHT] == BUTTON_PRESSED)
+	/*if (app->input.mouseButtons[MouseButton::RIGHT] == BUTTON_PRESSED)
 	{
 		float speed = 20.0f;
-		cameraPos += cameraRight * app->deltaTime * speed * app->input.mouseDelta.x;
-		cameraUp += cameraRight * app->deltaTime * speed * app->input.mouseDelta.y;
+		cameraPos -= cameraRight * app->deltaTime * speed * app->input.mouseDelta.x;
+		cameraUp -= cameraRight * app->deltaTime * speed * app->input.mouseDelta.y;
 		
-	}
+	}*/
 
 	RecalculateCamera(displaySize);
 }

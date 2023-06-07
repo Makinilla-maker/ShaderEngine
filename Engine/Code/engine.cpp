@@ -358,7 +358,7 @@ void Init(App* app)
 
     app->lightBuffer = CreateBuffer(app->maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
-    //app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
+    app->waterPlane = LoadModel(app,"Water/Plane.obj", std::string("Plane"), {0,-2,0}, {0,0,0}, {1,1,1});
     app->waterID = LoadTexture2D(app, "Water/dudvmap.png");
     //app->entities[app->waterPlane].materialIdx.push_back(app->waterID);
     app->modelPatrick = LoadModel(app,"Patrick/Patrick.obj", std::string("Patrick"), {-5,1,1}, {0,0,0}, {1,1,1});
@@ -374,7 +374,7 @@ void Init(App* app)
 
 
     //app->modelPatrick2 = LoadModel(app,"Patrick/NoSeProfe.obj", std::string("Hola profe"), {1,1,1}, {0,0,0}, {1,1,1});
-
+    
     app->selectedEntity = 0;
 
     Light lightdios = Light(LightType::DIRECTIONAL, { 1, 1, 1 }, { 1 ,1, 1 }, 10.0f, glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
@@ -798,6 +798,15 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 
     return vaoHandle;
 }
+void PassWaterScene(Camera* camera, GLenum colorAttachment)
+{
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CLIP_DISTANCE0);
+
+    ///??????????????????????????????????????xd
+
+    glDisable(GL_CLIP_DISTANCE0);
+}
 
 void Render(App* app)
 {
@@ -806,7 +815,27 @@ void Render(App* app)
     case DEFERRED:
     {
         /////////////Skybox///////
-                
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, app->waterbuffer.fboReflection.frameBufferHandle);
+
+        Camera reflectionCam = app->camera;
+        reflectionCam.cameraPos.y = -reflectionCam.cameraPos.y;
+        reflectionCam.pitch = -reflectionCam.pitch;
+        reflectionCam.view = glm::lookAt(reflectionCam.cameraPos, reflectionCam.cameraPos + reflectionCam.cameraForward, reflectionCam.cameraUp);
+
+        PassWaterScene(&reflectionCam, app->waterbuffer.fboReflection.frameBufferHandle);
+        //PassBackground(&reflectionCam, GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        //////////////////////////////////////////////////// REFRACTION /////////////////////////////////////
+        // Render on this framebuffer render target
+        glBindFramebuffer(GL_FRAMEBUFFER, app->waterbuffer.fboRefraction.frameBufferHandle);
+
+        Camera refractionCam = app->camera;
+        PassWaterScene(&reflectionCam, app->waterbuffer.fboReflection.frameBufferHandle);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         glBindVertexArray(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, app->frameBuffer.frameBufferHandle);
@@ -910,8 +939,8 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
 
                 glUniform1i(glGetUniformLocation(textureMeshProgram.handle, "uTexture"), 0);
-                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(app->camera.view));
-                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1, GL_FALSE, glm::value_ptr(app->camera.projection));
+                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "viewMatrix"), 1, GL_FALSE, &app->camera.view[0][0]);
+                glUniformMatrix4fv(glGetUniformLocation(textureMeshProgram.handle, "projection"), 1, GL_FALSE, &app->camera.projection[0][0]);
 
                 Submesh& submesh = mesh.submeshes[i];
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
@@ -933,8 +962,8 @@ void SkyboxRender(App* app)
 
     glm::mat4 view = glm::mat4(glm::mat3(app->camera.view));
 
-    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &app->camera.projection[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "view"), 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programCubemap.handle, "projection"), 1, GL_FALSE, &app->camera.projection[0][0]);
     
     glBindVertexArray(app->skyboxVAO);
     glActiveTexture(GL_TEXTURE0);

@@ -26,6 +26,9 @@ public:
 
 	float zNear;
 	float zFar;
+	float yaw;
+	float pitch;
+
 	glm::mat4 projection;
 
 	glm::vec3 cameraPos;
@@ -37,6 +40,7 @@ public:
 	float movementSpeed = 0.5f;
 
 	glm::vec3 cameraTarget;
+	glm::vec3 cameraTarget2;
 
 
 	glm::mat4 view;
